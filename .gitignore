@@ -1,13 +1,3 @@
-# Dependencies
-node_modules
-balaji metel/node_modules
-
-# Production Build
-dist
-balaji metel/dist
-dist-ssr
-balaji metel/dist-ssr
-
 # Logs
 logs
 *.log
@@ -16,6 +6,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# Dependencies
+node_modules
+dist
+dist-ssr
+*.local
 
 # Environment
 .env
