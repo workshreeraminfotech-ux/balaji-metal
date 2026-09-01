@@ -1,0 +1,10 @@
+{
+  "name": "balaji-metal-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix \"balaji metel\" run dev",
+    "build": "npm --prefix \"balaji metel\" run build",
+    "preview": "npm --prefix \"balaji metel\" run preview"
+  }
+}

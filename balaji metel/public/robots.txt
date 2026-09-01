@@ -1,0 +1,9 @@
+# Robots.txt for Balaji Metal
+# https://balajimental.com
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+
+Sitemap: https://balajimental.com/sitemap.xml
