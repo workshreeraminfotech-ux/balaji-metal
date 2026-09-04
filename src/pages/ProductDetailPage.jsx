@@ -293,19 +293,6 @@ export default function ProductDetailPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rated Speed</span>
                 <p className="text-xs sm:text-sm font-black text-slate-900 truncate">{speedSpec}</p>
               </div>
-              <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Balance Grade</span>
-                <p className="text-xs sm:text-sm font-black text-emerald-600 truncate">ISO 1940 G6.3</p>
-              </div>
-            </div>
-
-            {/* Material Highlight Card */}
-            <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-md space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Standard Metallurgy & Casting Grade</span>
-                <span className="text-[10px] font-mono text-slate-400">IS: 210 Standard</span>
-              </div>
-              <p className="text-sm font-bold text-white">{product.material || fallbackData.material}</p>
             </div>
 
             {/* Action Buttons Deck */}

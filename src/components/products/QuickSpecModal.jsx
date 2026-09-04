@@ -198,12 +198,6 @@ export default function QuickSpecModal({ product, isOpen, onClose }) {
                 </p>
               </div>
 
-              {/* Material Pill */}
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-2.5 text-xs">
-                <span className="font-bold text-orange-600 shrink-0">Material:</span>
-                <span className="text-slate-800 font-semibold">{material}</span>
-              </div>
-
               {/* Key Benefits / Highlights */}
               {features.length > 0 && (
                 <div className="space-y-2 pt-1">

@@ -143,7 +143,6 @@ export default function AdminProductsPage() {
                 <tr className="text-slate-500 uppercase tracking-wider text-[11px] border-b border-slate-100 bg-slate-50">
                   <th className="py-3.5 px-6 font-bold">Product</th>
                   <th className="py-3.5 px-4 font-bold">Category</th>
-                  <th className="py-3.5 px-4 font-bold">Material</th>
                   <th className="py-3.5 px-4 font-bold">Photos</th>
                   <th className="py-3.5 px-4 font-bold">Home Featured</th>
                   <th className="py-3.5 px-6 font-bold text-right">Actions</th>
@@ -177,11 +176,6 @@ export default function AdminProductsPage() {
                         <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200 text-[11px] font-bold">
                           {product.category_name}
                         </span>
-                      </td>
-
-                      {/* Material */}
-                      <td className="py-4 px-4 text-slate-700 font-mono text-xs">
-                        {product.material || 'Cast Iron'}
                       </td>
 
                       {/* Gallery count */}

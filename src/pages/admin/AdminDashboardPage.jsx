@@ -294,8 +294,8 @@ export default function AdminDashboardPage() {
                 <h4 className="text-sm font-bold text-slate-900 truncate">
                   {p.name}
                 </h4>
-                <p className="text-[11px] text-slate-500 truncate font-mono">
-                  {p.material}
+                <p className="text-[11px] text-slate-500 truncate">
+                  {p.short_description || p.category_name}
                 </p>
               </div>
             </div>
