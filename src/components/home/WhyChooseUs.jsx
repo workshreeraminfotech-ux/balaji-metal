@@ -18,8 +18,8 @@ const WhyChooseUs = () => {
     },
     {
       icon: Cpu,
-      title: "Precision CNC Turned Grooves",
-      description: "Computerized CNC turning centers ensure exact belt groove angles, tight dimensional runout tolerances, and flawless concentricity.",
+      title: "Precision Turned Grooves",
+      description: "Precision lathe turning ensures exact belt groove angles, tight dimensional runout tolerances, and flawless concentricity.",
       color: "bg-emerald-50 text-emerald-600 border-emerald-200"
     },
     {

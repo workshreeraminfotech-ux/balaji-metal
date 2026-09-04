@@ -26,7 +26,16 @@ export const useSettings = () => {
 
   useEffect(() => {
     fetchSettings();
+
+    const unsubscribe = storageService.subscribe((detail) => {
+      if (!detail?.type || detail.type === 'settings' || detail.type === 'all') {
+        fetchSettings();
+      }
+    });
+
+    return unsubscribe;
   }, [fetchSettings]);
 
   return { settings, loading, error, updateSettings, refetch: fetchSettings };
 };
+

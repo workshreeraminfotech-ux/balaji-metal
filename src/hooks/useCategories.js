@@ -20,7 +20,16 @@ export const useCategories = () => {
 
   useEffect(() => {
     fetchCategories();
+
+    const unsubscribe = storageService.subscribe((detail) => {
+      if (!detail?.type || detail.type === 'categories' || detail.type === 'all') {
+        fetchCategories();
+      }
+    });
+
+    return unsubscribe;
   }, [fetchCategories]);
 
   return { categories, loading, error, refetch: fetchCategories };
 };
+

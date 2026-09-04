@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
-import { COMPANY_INFO } from '@/data/companyData';
+import { useSettings } from '@/hooks/useSettings';
 
 export default function WhatsAppButton() {
   const [isHovered, setIsHovered] = useState(false);
-  const waNumber = (COMPANY_INFO.whatsapp || '917600060193').replace('+', '');
+  const { settings } = useSettings();
+  const waNumber = (settings.whatsapp_number || settings.company_whatsapp || settings.whatsapp || '917600060193').replace('+', '');
   const waUrl = `https://wa.me/${waNumber}?text=Hello%20Balaji%20Metal,%20I%20am%20visiting%20your%20website%20and%20would%20like%20to%20inquire%20about%20your%20power%20transmission%20products.`;
 
   return (

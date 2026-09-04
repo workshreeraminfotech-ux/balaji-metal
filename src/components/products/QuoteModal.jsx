@@ -5,10 +5,11 @@ import Button from '@/components/ui/Button';
 import { useInquiries } from '@/hooks/useInquiries';
 import toast from 'react-hot-toast';
 import { PhoneCall, MessageSquare, Send, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { COMPANY_INFO } from '@/data/companyData';
+import { useSettings } from '@/hooks/useSettings';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 
 export default function QuoteModal({ isOpen, onClose, productName = '', selectedSize = '' }) {
+  const { settings } = useSettings();
   const { submitInquiry, loading, error, success } = useInquiries();
   const [formData, setFormData] = useState({
     name: '',
@@ -71,8 +72,9 @@ export default function QuoteModal({ isOpen, onClose, productName = '', selected
   };
 
   const handleWhatsAppRedirect = () => {
+    const waNumber = (settings.whatsapp_number || settings.company_whatsapp || settings.whatsapp || '917600060193').replace('+', '');
     const waText = `Hello Balaji Metal Team,\nI would like to request an official quotation:\n• Product: ${formData.product_name || productName || 'Industrial Component'}\n• Size/Bore: ${formData.size_or_bore || selectedSize || 'As per standard'}\n• Quantity: ${formData.quantity || '10'} pcs\n• Name: ${formData.name || 'Buyer'}\n• Company: ${formData.company || 'Industrial Client'}\n• Requirements: ${formData.message || 'Please share price & dispatch lead time.'}`;
-    const url = `https://wa.me/${COMPANY_INFO.whatsapp.replace('+', '')}?text=${encodeURIComponent(waText)}`;
+    const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(waText)}`;
     window.open(url, '_blank');
     onClose();
   };

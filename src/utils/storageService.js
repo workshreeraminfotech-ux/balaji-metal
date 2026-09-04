@@ -40,12 +40,33 @@ const SAMPLE_INQUIRIES = [
 ];
 
 export const storageService = {
+  // Broadcast update event
+  notifyChange: (type, data = null) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('balaji_data_changed', { detail: { type, data } }));
+    }
+  },
+
+  subscribe: (callback) => {
+    if (typeof window === 'undefined') return () => {};
+    const handler = (e) => callback(e.detail);
+    window.addEventListener('balaji_data_changed', handler);
+    window.addEventListener('storage', handler);
+    return () => {
+      window.removeEventListener('balaji_data_changed', handler);
+      window.removeEventListener('storage', handler);
+    };
+  },
+
   // PRODUCTS
   getProducts: () => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(PRODUCTS));
       return PRODUCTS;
@@ -80,8 +101,8 @@ export const storageService = {
           return {
             ...p,
             ...productData,
-            category_name: category.name || p.category_name,
-            category_slug: category.slug || p.category_slug,
+            category_name: category.name || p.category_name || 'Industrial Components',
+            category_slug: category.slug || p.category_slug || 'couplings',
             updated_at: new Date().toISOString()
           };
         }
@@ -91,14 +112,16 @@ export const storageService = {
       // New Product
       const newId = products.length > 0 ? Math.max(...products.map(p => Number(p.id) || 0)) + 1 : 1;
       const slug = productData.slug || (productData.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const defaultImg = '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg';
+      const mainImg = productData.image || defaultImg;
       const newProduct = {
         ...productData,
         id: newId,
         slug,
-        category_name: category.name || 'General',
-        category_slug: category.slug || 'general',
-        image: productData.image || '/images/products/pin-bush-coupling.jpg',
-        gallery: productData.gallery || [productData.image || '/images/products/pin-bush-coupling.jpg'],
+        category_name: category.name || 'Industrial Components',
+        category_slug: category.slug || 'couplings',
+        image: mainImg,
+        gallery: productData.gallery && productData.gallery.length > 0 ? productData.gallery : [mainImg],
         features: productData.features || [],
         specifications: productData.specifications || [],
         applications: productData.applications || [],
@@ -111,6 +134,7 @@ export const storageService = {
     }
 
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedProducts));
+    storageService.notifyChange('products');
     return updatedProducts;
   },
 
@@ -118,6 +142,7 @@ export const storageService = {
     const products = storageService.getProducts();
     const filtered = products.filter(p => String(p.id) !== String(id));
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
+    storageService.notifyChange('products');
     return filtered;
   },
 
@@ -126,7 +151,10 @@ export const storageService = {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(CATEGORIES));
       return CATEGORIES;
@@ -154,6 +182,7 @@ export const storageService = {
       updated = [...categories, newCat];
     }
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
+    storageService.notifyChange('categories');
     return updated;
   },
 
@@ -161,6 +190,7 @@ export const storageService = {
     const categories = storageService.getCategories();
     const filtered = categories.filter(c => String(c.id) !== String(id));
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
+    storageService.notifyChange('categories');
     return filtered;
   },
 
@@ -185,11 +215,14 @@ export const storageService = {
     const newInquiry = {
       ...inquiryData,
       id: newId,
+      company_name: inquiryData.company_name || inquiryData.company || '',
+      product_interest: inquiryData.product_interest || inquiryData.product_name || '',
       status: 'new',
       created_at: new Date().toISOString()
     };
     const updated = [newInquiry, ...inquiries];
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
+    storageService.notifyChange('inquiries');
     return newInquiry;
   },
 
@@ -197,6 +230,7 @@ export const storageService = {
     const inquiries = storageService.getInquiries();
     const updated = inquiries.map(i => String(i.id) === String(id) ? { ...i, status } : i);
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
+    storageService.notifyChange('inquiries');
     return updated;
   },
 
@@ -204,6 +238,7 @@ export const storageService = {
     const inquiries = storageService.getInquiries();
     const filtered = inquiries.filter(i => String(i.id) !== String(id));
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(filtered));
+    storageService.notifyChange('inquiries');
     return filtered;
   },
 
@@ -211,36 +246,89 @@ export const storageService = {
   getSettings: () => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-      const initialSettings = {
-        company_name: COMPANY_INFO.name,
-        company_tagline: COMPANY_INFO.tagline,
-        company_subtagline: COMPANY_INFO.subTagline,
-        company_phone: COMPANY_INFO.phones[0].display,
-        company_phone_2: COMPANY_INFO.phones[1].display,
-        company_email: COMPANY_INFO.email,
-        company_address: COMPANY_INFO.address.full,
-        company_whatsapp: COMPANY_INFO.whatsapp,
-        business_hours: COMPANY_INFO.businessHours,
-        google_maps_embed: COMPANY_INFO.googleMapsUrl,
-        established_year: COMPANY_INFO.establishedYear,
-        experience_years: COMPANY_INFO.experienceYears
+      let data = stored ? JSON.parse(stored) : {};
+
+      const primaryPhone = data.primary_phone || data.company_phone || COMPANY_INFO.phones[0].display;
+      const secondaryPhone = data.secondary_phone || data.company_phone_2 || COMPANY_INFO.phones[1].display;
+      const email = data.email || data.company_email || COMPANY_INFO.email;
+      const address = data.address || data.company_address || COMPANY_INFO.address.full;
+      const whatsapp = data.whatsapp_number || data.company_whatsapp || data.whatsapp || COMPANY_INFO.whatsapp;
+      const hours = data.working_hours || data.business_hours || COMPANY_INFO.businessHours;
+      const companyName = data.company_name || data.name || COMPANY_INFO.name;
+
+      const addressObj = typeof address === 'object' && address !== null ? address : {
+        full: String(address || ''),
+        line1: String(address || '').split(',')[0] || String(address || ''),
+        line2: String(address || '').split(',').slice(1, 3).join(',') || '',
+        city: 'Rajkot',
+        state: 'Gujarat',
+        pincode: '360025',
+        country: 'India'
       };
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(initialSettings));
-      return initialSettings;
+
+      const merged = {
+        ...COMPANY_INFO,
+        ...data,
+        name: companyName,
+        company_name: companyName,
+        primary_phone: primaryPhone,
+        company_phone: primaryPhone,
+        secondary_phone: secondaryPhone,
+        company_phone_2: secondaryPhone,
+        email: email,
+        company_email: email,
+        address: addressObj,
+        company_address: addressObj.full,
+        whatsapp: whatsapp,
+        whatsapp_number: whatsapp,
+        company_whatsapp: whatsapp,
+        working_hours: hours,
+        business_hours: hours,
+        phones: [
+          { display: primaryPhone, raw: primaryPhone.replace(/[^0-9+]/g, ''), isPrimary: true, isWhatsApp: true },
+          { display: secondaryPhone, raw: secondaryPhone.replace(/[^0-9+]/g, ''), isPrimary: false, isWhatsApp: false }
+        ]
+      };
+      return merged;
     } catch (e) {
       console.error('Storage getSettings error:', e);
-      return {};
+      return COMPANY_INFO;
     }
   },
 
   saveSettings: (settingsData) => {
     const current = storageService.getSettings();
-    const updated = { ...current, ...settingsData };
+    const primaryPhone = settingsData.primary_phone || settingsData.company_phone || current.primary_phone;
+    const secondaryPhone = settingsData.secondary_phone || settingsData.company_phone_2 || current.secondary_phone;
+    const email = settingsData.email || settingsData.company_email || current.email;
+    const address = settingsData.address || settingsData.company_address || current.company_address;
+    const whatsapp = settingsData.whatsapp_number || settingsData.company_whatsapp || settingsData.whatsapp || current.whatsapp;
+    const hours = settingsData.working_hours || settingsData.business_hours || current.working_hours;
+    const companyName = settingsData.company_name || settingsData.name || current.company_name;
+
+    const updated = {
+      ...current,
+      ...settingsData,
+      name: companyName,
+      company_name: companyName,
+      primary_phone: primaryPhone,
+      company_phone: primaryPhone,
+      secondary_phone: secondaryPhone,
+      company_phone_2: secondaryPhone,
+      email: email,
+      company_email: email,
+      address: typeof address === 'object' ? (address.full || address.line1) : address,
+      company_address: typeof address === 'object' ? (address.full || address.line1) : address,
+      whatsapp: whatsapp,
+      whatsapp_number: whatsapp,
+      company_whatsapp: whatsapp,
+      working_hours: hours,
+      business_hours: hours
+    };
+
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
-    return updated;
+    storageService.notifyChange('settings');
+    return storageService.getSettings();
   },
 
   // DASHBOARD STATS
@@ -263,7 +351,7 @@ export const storageService = {
     };
   },
 
-  // AUTH (Demo Admin)
+  // AUTH (Admin)
   getAuthUser: () => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.AUTH_USER);
@@ -276,21 +364,47 @@ export const storageService = {
     }
   },
 
+  setAuthUser: (userData) => {
+    localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(userData));
+    storageService.notifyChange('auth');
+    return userData;
+  },
+
   login: (email, password) => {
+    const storedUser = storageService.getAuthUser();
+    // Default admin password check
+    if (storedUser && storedUser.password) {
+      if (storedUser.password !== password) {
+        return { success: false, message: 'Invalid password' };
+      }
+    }
     const adminUser = {
       id: 1,
       name: 'Balaji Administrator',
       email: email || 'admin@balajimetal.com',
-      role: 'admin'
+      role: 'admin',
+      ...(storedUser || {})
     };
     const mockToken = 'mock_jwt_token_' + Date.now();
     localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(adminUser));
     localStorage.setItem(STORAGE_KEYS.TOKEN, mockToken);
+    storageService.notifyChange('auth');
     return { success: true, user: adminUser, token: mockToken };
   },
 
   logout: () => {
     localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    storageService.notifyChange('auth');
+  },
+
+  // Reset to initial factory defaults
+  resetToDefaults: () => {
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(PRODUCTS));
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(CATEGORIES));
+    localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(SAMPLE_INQUIRIES));
+    localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+    storageService.notifyChange('all');
   }
 };
+

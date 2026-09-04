@@ -3,10 +3,13 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { MessageSquare, ArrowRight, ShieldCheck } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { COMPANY_INFO } from '@/data/companyData';
+import { useSettings } from '@/hooks/useSettings';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 
 const ContactCTA = () => {
+  const { settings } = useSettings();
+  const waNumber = (settings.whatsapp_number || settings.company_whatsapp || settings.whatsapp || '917600060193').replace('+', '');
+
   return (
     <section className="py-20 bg-white text-slate-900 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,7 +38,7 @@ const ContactCTA = () => {
 
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-center">
               <a
-                href={`https://wa.me/${COMPANY_INFO.whatsapp.replace('+', '')}?text=Hello%20Balaji%20Metal,%20I%20would%20like%20to%20request%20an%20instant%20quotation.`}
+                href={`https://wa.me/${waNumber}?text=Hello%20Balaji%20Metal,%20I%20would%20like%20to%20request%20an%20instant%20quotation.`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full"

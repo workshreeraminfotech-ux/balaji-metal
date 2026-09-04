@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '@/api/axios';
 import SEO from '@/components/ui/SEO';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import Button from '@/components/ui/Button';
@@ -14,11 +13,12 @@ import {
 } from 'lucide-react';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { motion, AnimatePresence } from 'framer-motion';
-import { COMPANY_INFO } from '@/data/companyData';
-import { PRODUCTS } from '@/data/productsData';
+import { useSettings } from '@/hooks/useSettings';
+import { storageService } from '@/utils/storageService';
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
+  const { settings: companySettings } = useSettings();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,40 +31,35 @@ export default function ProductDetailPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProduct = () => {
       setLoading(true);
       try {
-        const res = await api.get(`/products/slug/${slug}`);
-        if (res.data?.success && res.data.data) {
-          const raw = res.data.data.product || res.data.data;
-          const fallback = PRODUCTS.find(p => p.slug === slug) || {};
-          const merged = { ...fallback, ...raw };
-          setProduct(merged);
-          setSelectedImage(merged.image || fallback.image || '/images/products/pin-bush-coupling.jpg');
-        } else {
-          const localItem = PRODUCTS.find(p => p.slug === slug);
-          if (localItem) {
-            setProduct(localItem);
-            setSelectedImage(localItem.image);
-          } else {
-            setError('Product not found');
-          }
-        }
-      } catch (err) {
-        const localItem = PRODUCTS.find(p => p.slug === slug);
-        if (localItem) {
-          setProduct(localItem);
-          setSelectedImage(localItem.image);
+        const item = storageService.getProductBySlug(slug);
+        if (item) {
+          setProduct(item);
+          setSelectedImage(item.image || (item.gallery && item.gallery[0]) || '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg');
           setError(null);
         } else {
           setError('Product not found');
         }
+      } catch (err) {
+        console.error(err);
+        setError('Product not found');
       } finally {
         setLoading(false);
       }
     };
+
     fetchProduct();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const unsubscribe = storageService.subscribe((detail) => {
+      if (!detail?.type || detail.type === 'products' || detail.type === 'all') {
+        fetchProduct();
+      }
+    });
+
+    return unsubscribe;
   }, [slug]);
 
   if (loading) {
@@ -104,32 +99,32 @@ export default function ProductDetailPage() {
     );
   }
 
-  const fallbackData = PRODUCTS.find(p => p.slug === slug) || {};
-  const imageSrc = selectedImage || product.image || fallbackData.image || '/images/products/pin-bush-coupling.jpg';
+  const imageSrc = selectedImage || product.image || (Array.isArray(product.gallery) && product.gallery[0]) || '/images/products/pin-bush-coupling.jpg';
 
-  const features = Array.isArray(product.features) ? product.features : (fallbackData.features || []);
+  const features = Array.isArray(product.features) ? product.features : [];
   const specifications = Array.isArray(product.specifications) 
     ? product.specifications 
     : (typeof product.specifications === 'object' && product.specifications !== null 
         ? Object.entries(product.specifications).map(([key, value]) => ({ key, value })) 
-        : fallbackData.specifications || []);
-  const applications = Array.isArray(product.applications) ? product.applications : (fallbackData.applications || []);
-  const sizes = Array.isArray(product.available_sizes) ? product.available_sizes : (fallbackData.available_sizes || []);
+        : []);
+  const applications = Array.isArray(product.applications) ? product.applications : [];
+  const sizes = Array.isArray(product.available_sizes) ? product.available_sizes : [];
 
   const galleryImages = [
     imageSrc,
-    ...(product.gallery || fallbackData.gallery || [])
-  ].filter((v, i, a) => a.indexOf(v) === i);
+    ...(Array.isArray(product.gallery) ? product.gallery : [])
+  ].filter((v, i, a) => v && a.indexOf(v) === i);
 
-  const relatedProducts = PRODUCTS.filter(p => p.slug !== slug).slice(0, 3);
+  const relatedProducts = storageService.getProducts().filter(p => p.slug !== slug).slice(0, 3);
 
   const handleSizeSelectForQuote = (sizeName) => {
     setSelectedSizeForQuote(sizeName);
     setIsQuoteOpen(true);
   };
 
+  const dynamicWhatsApp = (companySettings.whatsapp || companySettings.company_whatsapp || '917600060193').replace('+', '');
   const whatsappMessage = `Hello Balaji Metal Team,\nI would like to request an official quotation for *${product.name}* ${selectedSizeForQuote ? `(Size: ${selectedSizeForQuote})` : ''}.\nPlease share technical datasheet, CAD drawing, and price quotation.`;
-  const whatsappUrl = `https://wa.me/${COMPANY_INFO.whatsapp.replace('+', '')}?text=${encodeURIComponent(whatsappMessage)}`;
+  const whatsappUrl = `https://wa.me/${dynamicWhatsApp}?text=${encodeURIComponent(whatsappMessage)}`;
 
   // Derive key parameters for metric cards
   const boreSpec = specifications.find(s => s.key.toLowerCase().includes('bore'))?.value || '12 mm – 160 mm';
@@ -200,8 +195,38 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
+              {/* Gallery Thumbnails Strip (Showing all photoshoot images) */}
+              {galleryImages.length > 1 && (
+                <div className="pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      Product Photos ({galleryImages.length})
+                    </span>
+                    <span className="text-[10px] text-orange-600 font-bold">
+                      Click to switch
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                    {galleryImages.map((img, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setSelectedImage(img)}
+                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl p-1.5 bg-slate-50 border-2 transition-all shrink-0 cursor-pointer overflow-hidden ${
+                          imageSrc === img 
+                            ? 'border-orange-500 shadow-md shadow-orange-500/20 ring-2 ring-orange-500/20 bg-white' 
+                            : 'border-slate-200 hover:border-slate-300 opacity-75 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={img} alt={`${product.name} view ${idx + 1}`} className="w-full h-full object-contain" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Quality & Metallurgy Badges */}
-              <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 gap-3 text-center">
+              <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-3 text-center">
                 <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="block text-[10px] text-slate-500 uppercase font-bold">Balancing Standard</span>
                   <span className="text-xs font-black text-orange-600">ISO 1940 G6.3</span>
@@ -314,11 +339,11 @@ export default function ProductDetailPage() {
 
               <div className="flex items-center justify-between pt-1">
                 <a 
-                  href={`tel:${COMPANY_INFO.phones[0].raw}`}
+                  href={`tel:${companySettings.phones?.[0]?.raw || companySettings.primary_phone || '+917600060193'}`}
                   className="text-xs font-bold text-slate-600 hover:text-orange-600 flex items-center gap-1.5 transition-colors"
                 >
                   <PhoneCall size={14} className="text-emerald-600" />
-                  <span>Call Technical Support: {COMPANY_INFO.phones[0].display}</span>
+                  <span>Call Technical Support: {companySettings.primary_phone || companySettings.phones?.[0]?.display || '+91-76000 60193'}</span>
                 </a>
 
                 <span className="text-xs text-slate-400 font-medium">Pan-India Transport Available</span>
@@ -339,7 +364,7 @@ export default function ProductDetailPage() {
               { id: 'sizes', label: `Standard Sizing (${sizes.length})` },
               { id: 'features', label: 'Engineering Features' },
               { id: 'applications', label: 'Industrial Applications' },
-              { id: 'custom', label: 'Custom CNC & Drawings' }
+              { id: 'custom', label: 'Custom Bores & Drawings' }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -477,7 +502,7 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          {/* Tab 5: Custom CNC & Drawings */}
+          {/* Tab 5: Custom Bores & Drawings */}
           {activeTab === 'custom' && (
             <div className="space-y-6">
               <div>
@@ -492,7 +517,7 @@ export default function ProductDetailPage() {
                   </div>
                   <h4 className="text-sm font-bold text-slate-900">Custom Pilot Bore & Keyway</h4>
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    CNC turned pilot bores and high-precision broaching conforming to DIN 6885, BS 4235, or US inch standard keyways.
+                    Precision turned pilot bores and high-precision broaching conforming to DIN 6885, BS 4235, or US inch standard keyways.
                   </p>
                 </div>
 
@@ -526,7 +551,7 @@ export default function ProductDetailPage() {
                 </Link>
 
                 <a
-                  href={`https://wa.me/${COMPANY_INFO.whatsapp.replace('+', '')}?text=Hello%20Balaji%20Metal,%20I%20have%20a%20drawing%20for%20a%20custom%20${encodeURIComponent(product.name)}.`}
+                  href={`https://wa.me/${dynamicWhatsApp}?text=Hello%20Balaji%20Metal,%20I%20have%20a%20drawing%20for%20a%20custom%20${encodeURIComponent(product.name)}.`}
                   target="_blank"
                   rel="noreferrer"
                 >

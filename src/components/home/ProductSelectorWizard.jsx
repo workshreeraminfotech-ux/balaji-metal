@@ -2,10 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calculator, ArrowRight, CheckCircle2, RotateCcw, MessageSquare, Zap, Cpu, Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { COMPANY_INFO } from '@/data/companyData';
+import { useSettings } from '@/hooks/useSettings';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 
 export default function ProductSelectorWizard() {
+  const { settings } = useSettings();
+  const waNumber = (settings.whatsapp_number || settings.company_whatsapp || settings.whatsapp || '917600060193').replace('+', '');
   const [componentType, setComponentType] = useState('coupling');
   const [motorPowerHP, setMotorPowerHP] = useState('10');
   const [rpm, setRpm] = useState('1440');
@@ -28,7 +30,7 @@ export default function ProductSelectorWizard() {
         return {
           title: "Star Bush Jaw Spider Coupling (Size L-095 / L-110)",
           slug: "star-bush-coupling",
-          material: "Precision CNC SAE 1045 Steel Hubs with PU Spider",
+          material: "Precision Graded SAE 1045 Steel Hubs with PU Spider",
           reason: `Compact vibration isolating jaw coupling for ${calculatedTorque} Nm rated torque.`
         };
       }
@@ -181,7 +183,7 @@ export default function ProductSelectorWizard() {
 
                 <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                   <a
-                    href={`https://wa.me/${COMPANY_INFO.whatsapp.replace('+', '')}?text=Hello%20Balaji%20Metal,%20I%20used%20your%20selector%20for%20a%20${motorPowerHP}HP%20@%20${rpm}RPM%20motor.%20Please%20quote%20for%20${encodeURIComponent(rec.title)}.`}
+                    href={`https://wa.me/${waNumber}?text=Hello%20Balaji%20Metal,%20I%20used%20your%20selector%20for%20a%20${motorPowerHP}HP%20@%20${rpm}RPM%20motor.%20Please%20quote%20for%20${encodeURIComponent(rec.title)}.`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full sm:w-auto"

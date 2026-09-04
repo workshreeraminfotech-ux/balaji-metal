@@ -1,11 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Clock, ExternalLink, ArrowRight } from 'lucide-react';
-import { COMPANY_INFO } from '@/data/companyData';
+import { MapPin, Phone, Mail, Clock, ExternalLink, ArrowRight, Lock } from 'lucide-react';
+import { useSettings } from '@/hooks/useSettings';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { settings } = useSettings();
+
+  const primaryPhone = settings.primary_phone || settings.phones?.[0]?.display || '+91-76000 60193';
+  const primaryPhoneRaw = settings.phones?.[0]?.raw || primaryPhone.replace(/[^0-9+]/g, '');
+  const secondaryPhone = settings.secondary_phone || settings.phones?.[1]?.display || '+91-70960 70727';
+  const secondaryPhoneRaw = settings.phones?.[1]?.raw || secondaryPhone.replace(/[^0-9+]/g, '');
+  const waNumber = (settings.whatsapp_number || settings.company_whatsapp || settings.whatsapp || '917600060193').replace('+', '');
+  const email = settings.email || settings.company_email || 'Balajimetal5302@gmail.com';
+  const hours = settings.working_hours || settings.business_hours || 'Mon - Sat: 9:00 AM - 7:00 PM (Sunday: Closed)';
 
   return (
     <footer className="bg-slate-950 text-slate-300 pt-14 pb-8 border-t border-slate-800/80 relative overflow-hidden">
@@ -71,46 +80,44 @@ export default function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                 <div className="text-slate-400 text-xs leading-relaxed max-w-md">
-                  <span className="font-semibold text-slate-200">{COMPANY_INFO.address.line1}</span>,<br />
-                  {COMPANY_INFO.address.line2},<br />
-                  {COMPANY_INFO.address.city}, {COMPANY_INFO.address.state} - {COMPANY_INFO.address.pincode}
+                  {settings.company_address || settings.address?.full || 'Balaji Metal, P. 43/44, Main Road, Ta. Kotda Sangani, Veraval (Shapar - Padavala Industrial Zone), Rajkot, Gujarat - 360025'}
                 </div>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-amber-400 shrink-0" />
                 <div className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <a href={`tel:${COMPANY_INFO.phones[0].raw}`} className="text-slate-300 hover:text-amber-400 font-semibold transition-colors">
-                    {COMPANY_INFO.phones[0].display}
+                  <a href={`tel:${primaryPhoneRaw}`} className="text-slate-300 hover:text-amber-400 font-semibold transition-colors">
+                    {primaryPhone}
                   </a>
                   <span className="text-slate-600 hidden sm:inline">|</span>
-                  <a href={`tel:${COMPANY_INFO.phones[1].raw}`} className="text-slate-400 hover:text-amber-400 transition-colors">
-                    {COMPANY_INFO.phones[1].display}
+                  <a href={`tel:${secondaryPhoneRaw}`} className="text-slate-400 hover:text-amber-400 transition-colors">
+                    {secondaryPhone}
                   </a>
                 </div>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-amber-400 shrink-0" />
                 <a 
-                  href={`mailto:${COMPANY_INFO.email}`} 
+                  href={`mailto:${email}`} 
                   className="text-slate-300 text-xs hover:text-amber-400 transition-colors break-all"
                 >
-                  {COMPANY_INFO.email}
+                  {email}
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <WhatsAppIcon size={16} fill="#25D366" />
                 <a 
-                  href={`https://wa.me/${COMPANY_INFO.whatsapp.replace('+', '')}?text=Hello%20Balaji%20Metal,%20I%20am%20contacting%20you%20via%20your%20website.`}
+                  href={`https://wa.me/${waNumber}?text=Hello%20Balaji%20Metal,%20I%20am%20contacting%20you%20via%20your%20website.`}
                   target="_blank" 
                   rel="noreferrer"
                   className="text-[#25D366] hover:underline text-xs font-bold transition-colors"
                 >
-                  WhatsApp: +91-76000 60193 (Instant RFQ)
+                  WhatsApp: {primaryPhone} (Instant RFQ)
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Clock className="h-4 w-4 text-amber-400 shrink-0" />
-                <span className="text-slate-400 text-xs">{COMPANY_INFO.businessHours}</span>
+                <span className="text-slate-400 text-xs">{hours}</span>
               </li>
             </ul>
           </div>
@@ -133,7 +140,7 @@ export default function Footer() {
             </p>
             <span className="text-slate-700 hidden sm:inline">•</span>
             <a 
-              href={COMPANY_INFO.googleMapsDirections} 
+              href={settings.googleMapsDirections || 'https://maps.google.com/?q=Balaji+Metal+Kotda+Sangani+Veraval+Rajkot+Gujarat+360025'} 
               target="_blank" 
               rel="noreferrer"
               className="text-slate-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
@@ -141,6 +148,15 @@ export default function Footer() {
               <span>Get Directions</span>
               <ExternalLink size={12} />
             </a>
+            <span className="text-slate-700 hidden sm:inline">•</span>
+            <Link 
+              to="/admin/login" 
+              className="text-slate-500 hover:text-orange-400 flex items-center gap-1 transition-colors"
+              title="Administrator Login"
+            >
+              <Lock size={12} />
+              <span>Admin Portal</span>
+            </Link>
           </div>
         </div>
       </div>

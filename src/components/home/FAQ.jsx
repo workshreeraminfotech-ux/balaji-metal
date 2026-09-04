@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, HelpCircle, PhoneCall } from 'lucide-react';
 import { COMPANY_INFO } from '@/data/companyData';
+import { useSettings } from '@/hooks/useSettings';
 
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(0);
+  const { settings } = useSettings();
+  const phoneDisplay = settings.primary_phone || settings.phones?.[0]?.display || '+91-76000 60193';
+  const phoneRaw = settings.phones?.[0]?.raw || phoneDisplay.replace(/[^0-9+]/g, '');
 
   const faqs = [
     {
@@ -95,11 +99,11 @@ const FAQ = () => {
             <p className="text-xs text-slate-500 font-medium mt-0.5">Speak directly with our technical engineering team for instant advice.</p>
           </div>
           <a
-            href={`tel:${COMPANY_INFO.phones[0].raw}`}
+            href={`tel:${phoneRaw}`}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-500/20 whitespace-nowrap cursor-pointer"
           >
             <PhoneCall size={14} />
-            <span>Call +91 76000 60193</span>
+            <span>Call {phoneDisplay}</span>
           </a>
         </div>
 

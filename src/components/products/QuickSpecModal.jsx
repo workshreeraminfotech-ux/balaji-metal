@@ -1,242 +1,303 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, ShieldCheck, CheckCircle2, Award, 
-  Cpu, FileText, ChevronRight, Layers, Sparkles 
+  X, CheckCircle2, Building2, Layers, 
+  ArrowRight, Sparkles, ChevronRight, ChevronLeft 
 } from 'lucide-react';
-import { COMPANY_INFO } from '@/data/companyData';
+import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/hooks/useSettings';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 
-export default function QuickSpecModal({ product, isOpen, onClose, onOpenQuote }) {
-  const [activeTab, setActiveTab] = useState('specs'); // 'specs' | 'sizes' | 'features' | 'applications'
+export default function QuickSpecModal({ product, isOpen, onClose }) {
+  const navigate = useNavigate();
+  const { settings } = useSettings();
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Reset index to 0 when product opens or changes
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [product?.id, product?.slug]);
 
   if (!isOpen || !product) return null;
 
-  const specifications = Array.isArray(product.specifications) ? product.specifications : [];
-  const sizes = Array.isArray(product.available_sizes) ? product.available_sizes : [];
-  const features = Array.isArray(product.features) ? product.features : [];
-  const applications = Array.isArray(product.applications) ? product.applications : [];
+  // Safe gallery extraction - use product prop directly (no static PRODUCTS fallback needed)
+  const rawGallery = Array.isArray(product?.gallery) && product.gallery.length > 0
+    ? product.gallery
+    : product?.image
+      ? [product.image]
+      : ['/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg'];
 
-  const whatsappMessage = `Hello Balaji Metal Team,\nI am reviewing the *${product.name}* specification sheet on your website and would like price quotation and dispatch time.`;
-  const whatsappUrl = `https://wa.me/${COMPANY_INFO.whatsapp.replace('+', '')}?text=${encodeURIComponent(whatsappMessage)}`;
+  const gallery = rawGallery.filter(Boolean);
+  const safeIndex = Math.min(Math.max(0, activeImageIndex), gallery.length - 1);
+  const currentImage = gallery[safeIndex] || product?.image || '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg';
+
+  const handlePrevImage = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setActiveImageIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+  };
+
+  const handleNextImage = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setActiveImageIndex((prev) => (prev + 1) % gallery.length);
+  };
+
+  const productName = product?.name || 'Industrial Product';
+  const categoryName = product?.category_name || 'Industrial Product';
+  const description = product?.description || product?.short_description || 'High quality precision manufactured industrial power transmission component.';
+  const features = Array.isArray(product?.features) && product.features.length > 0 
+    ? product.features 
+    : [];
+  const applications = Array.isArray(product?.applications) && product.applications.length > 0 
+    ? product.applications 
+    : [];
+  const sizes = Array.isArray(product?.available_sizes) && product.available_sizes.length > 0 
+    ? product.available_sizes 
+    : [];
+  const material = product?.material || 'Graded Cast Iron (FG 200/250)';
+
+  const handleGetQuote = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    onClose();
+    navigate(`/contact?product=${encodeURIComponent(productName)}`);
+  };
+
+  const whatsappNum = (settings.whatsapp_number || settings.company_whatsapp || settings.whatsapp || '917600060193').replace('+', '');
+  const whatsappMessage = `Hello Balaji Metal, I want to inquire and request a price quote for *${productName}*.`;
+  const whatsappUrl = `https://wa.me/${whatsappNum}?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-slate-950/80 backdrop-blur-md">
-        {/* Backdrop Click */}
-        <div className="fixed inset-0" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-slate-950/80 backdrop-blur-md">
+      {/* Backdrop Click */}
+      <div className="fixed inset-0" onClick={onClose} />
 
-        {/* Modal Window */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ duration: 0.22 }}
-          className="relative bg-white rounded-3xl border border-slate-200/90 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden z-10"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <span className="px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/35 text-[11px] font-bold uppercase tracking-wider">
-                {product.category_name}
-              </span>
-              <span className="text-slate-300 text-xs font-mono font-bold hidden sm:inline">Quick Engineering Spec Sheet</span>
+      {/* Modal Window */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        transition={{ duration: 0.2 }}
+        className="relative bg-white rounded-3xl border border-slate-200/90 shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-bold uppercase tracking-wider">
+              {categoryName}
+            </span>
+            <span className="text-slate-300 text-xs font-medium hidden sm:inline">Product Overview & Photos</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
+            title="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Body Content (Scrollable) */}
+        <div className="p-5 sm:p-7 overflow-y-auto space-y-6">
+          
+          {/* Top Row: Photo Gallery on Left (6 cols) & Key Info on Right (6 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            {/* Photo Showcase & Scroll Arrows */}
+            <div className="lg:col-span-6 space-y-3">
+              {/* Main Large Photo Container with Left & Right Arrows */}
+              <div className="aspect-square bg-gradient-to-b from-slate-50 via-slate-50/80 to-slate-100/70 border border-slate-200/80 rounded-2xl p-5 flex items-center justify-center relative overflow-hidden shadow-inner group">
+                <img
+                  key={currentImage}
+                  src={currentImage}
+                  alt={productName}
+                  className="w-full h-full object-contain filter drop-shadow-md transition-all duration-300"
+                />
+
+                {/* Photo Counter Badge */}
+                {gallery.length > 0 && (
+                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-slate-900/85 text-white text-[11px] font-bold shadow-sm">
+                    {safeIndex + 1} / {gallery.length} Photos
+                  </div>
+                )}
+
+                {/* Previous Photo Arrow Button */}
+                {gallery.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handlePrevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/95 hover:bg-orange-600 text-slate-800 hover:text-white border border-slate-200 hover:border-orange-600 shadow-xl flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 z-20"
+                    title="Previous Photo"
+                    aria-label="Previous photo"
+                  >
+                    <ChevronLeft size={22} />
+                  </button>
+                )}
+
+                {/* Next Photo Arrow Button */}
+                {gallery.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/95 hover:bg-orange-600 text-slate-800 hover:text-white border border-slate-200 hover:border-orange-600 shadow-xl flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 z-20"
+                    title="Next Photo"
+                    aria-label="Next photo"
+                  >
+                    <ChevronRight size={22} />
+                  </button>
+                )}
+              </div>
+
+              {/* Clickable Photo Thumbnails Row */}
+              {gallery.length > 1 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                      All Photos ({gallery.length}):
+                    </span>
+                    <span className="text-[11px] font-bold text-orange-600">
+                      Click arrows or photo below
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                    {gallery.map((img, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setActiveImageIndex(idx)}
+                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl p-1 bg-slate-50 border-2 transition-all shrink-0 cursor-pointer overflow-hidden ${
+                          safeIndex === idx 
+                            ? 'border-orange-500 shadow-md shadow-orange-500/25 ring-2 ring-orange-500/20 bg-white' 
+                            : 'border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={img} alt={`view ${idx + 1}`} className="w-full h-full object-contain" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
-              title="Close"
+
+            {/* Product Details on Right */}
+            <div className="lg:col-span-6 space-y-4">
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-heading font-black text-slate-900 tracking-tight leading-snug">
+                  {productName}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                  Manufactured by <strong className="text-slate-800">Balaji Metal (Rajkot, Gujarat)</strong>
+                </p>
+              </div>
+
+              {/* Simple Description */}
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-orange-700 uppercase tracking-wider">About This Product:</h4>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal">
+                  {description}
+                </p>
+              </div>
+
+              {/* Material Pill */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-2.5 text-xs">
+                <span className="font-bold text-orange-600 shrink-0">Material:</span>
+                <span className="text-slate-800 font-semibold">{material}</span>
+              </div>
+
+              {/* Key Benefits / Highlights */}
+              {features.length > 0 && (
+                <div className="space-y-2 pt-1">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Key Benefits:</h4>
+                  <div className="space-y-1.5">
+                    {features.slice(0, 4).map((f, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                        <CheckCircle2 size={15} className="text-orange-600 shrink-0 mt-0.5" />
+                        <span>{typeof f === 'string' ? f : String(f)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Bottom Row: Industries & Applications */}
+          {applications.length > 0 && (
+            <div className="pt-4 border-t border-slate-100 space-y-3">
+              <div className="flex items-center gap-2">
+                <Building2 size={16} className="text-orange-600" />
+                <h4 className="text-sm font-heading font-black text-slate-900">
+                  Where Is This Product Used? (Machinery & Industries)
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {applications.map((app, i) => {
+                  const indText = typeof app === 'object' ? (app?.industry || 'Industrial Drive') : 'Industrial Machinery';
+                  const appDesc = typeof app === 'object' ? (app?.application || app?.name || '') : String(app);
+
+                  return (
+                    <div key={i} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+                      <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0 mt-1.5" />
+                      <div>
+                        <span className="block text-[11px] font-bold text-orange-700 uppercase">{indText}</span>
+                        <span className="text-xs font-semibold text-slate-800">{appDesc}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Standard Sizes Available */}
+          {sizes.length > 0 && (
+            <div className="pt-3 border-t border-slate-100 space-y-2">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Available Sizes & Configurations:
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {sizes.map((sz, i) => (
+                  <span key={i} className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
+                    {typeof sz === 'string' ? sz : String(sz)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+          <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+            Custom bores, keyways, and direct factory pricing available.
+          </span>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
             >
-              <X size={18} />
+              <WhatsAppIcon size={16} fill="#ffffff" />
+              <span>Chat on WhatsApp</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={handleGetQuote}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105"
+            >
+              <span>Get Official Quote</span>
+              <ArrowRight size={15} />
             </button>
           </div>
-
-          {/* Body Content */}
-          <div className="p-5 sm:p-7 overflow-y-auto space-y-6">
-            {/* Top Product Showcase in Modal */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-              {/* Visual Container */}
-              <div className="md:col-span-4 bg-gradient-to-b from-slate-50 to-slate-100/70 border border-slate-200/80 rounded-2xl p-5 flex items-center justify-center aspect-square shadow-inner">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-contain filter drop-shadow-md"
-                />
-              </div>
-
-              {/* Summary & Metrics */}
-              <div className="md:col-span-8 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                    Ready Stock & Custom Pilot Bore
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-mono font-bold">
-                    ISO 1940 G6.3
-                  </span>
-                </div>
-
-                <h3 className="text-2xl sm:text-3xl font-heading font-black text-slate-900 tracking-tight leading-snug">
-                  {product.name}
-                </h3>
-                
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
-                  {product.description || product.short_description}
-                </p>
-
-                {/* Material & Standards Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">Material Grade</span>
-                    <span className="text-xs font-black text-orange-600 truncate block">{product.material}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">Balancing</span>
-                    <span className="text-xs font-black text-slate-800">ISO 1940 G6.3</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 col-span-2 sm:col-span-1">
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">Keyway Standard</span>
-                    <span className="text-xs font-black text-slate-800">DIN 6885 / IS 210</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation Tabs in Modal */}
-            <div className="border-b border-slate-200 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {[
-                { id: 'specs', label: 'Technical Specifications' },
-                { id: 'sizes', label: `Standard Sizing (${sizes.length})` },
-                { id: 'features', label: 'Key Features' },
-                { id: 'applications', label: 'Industrial Applications' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                    activeTab === tab.id
-                      ? 'bg-orange-600 text-white shadow-xs'
-                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* TAB 1: Specifications Matrix Table */}
-            {activeTab === 'specs' && specifications.length > 0 && (
-              <div className="space-y-3">
-                <div className="overflow-hidden rounded-2xl border border-slate-200">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-100 uppercase text-slate-700 font-bold border-b border-slate-200">
-                      <tr>
-                        <th className="px-5 py-3">Engineering Parameter</th>
-                        <th className="px-5 py-3">Standard Factory Value / Tolerance</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {specifications.map((s, idx) => (
-                        <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/60 hover:bg-slate-50'}>
-                          <td className="px-5 py-2.5 font-bold text-slate-900">{s.key}</td>
-                          <td className="px-5 py-2.5 font-mono font-semibold text-orange-700">{s.value}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: Available Sizes Matrix */}
-            {activeTab === 'sizes' && (
-              <div className="space-y-3">
-                <p className="text-xs text-slate-500 font-medium">Click on any size below to request an instant quotation for that exact dimension:</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                  {sizes.map((sz, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        onClose();
-                        onOpenQuote(product, sz);
-                      }}
-                      className="p-3 rounded-xl bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-400 transition-all flex flex-col justify-between text-left group shadow-xs cursor-pointer"
-                    >
-                      <span className="text-[10px] font-mono text-slate-400 font-bold group-hover:text-orange-500">#{i + 1}</span>
-                      <span className="text-xs font-bold text-slate-900 group-hover:text-orange-600 py-1">{sz}</span>
-                      <span className="text-[10px] font-bold text-orange-600 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                        <span>Get Quote</span>
-                        <ChevronRight size={12} />
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: Features */}
-            {activeTab === 'features' && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {features.map((f, i) => (
-                    <div key={i} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
-                      <CheckCircle2 size={16} className="text-orange-600 shrink-0 mt-0.5" />
-                      <span className="text-xs text-slate-800 font-semibold leading-relaxed">{f}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* TAB 4: Applications */}
-            {activeTab === 'applications' && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {applications.map((app, i) => (
-                    <div key={i} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                      <span className="text-[10px] uppercase font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-md">
-                        {app.industry || 'Industrial Drive'}
-                      </span>
-                      <h4 className="text-xs font-bold text-slate-900 pt-1">{app.application || app}</h4>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-          </div>
-
-          {/* Footer Actions */}
-          <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-              <ShieldCheck size={16} className="text-emerald-600" />
-              <span>Direct Manufacturer Guarantee with MTC Certificate</span>
-            </div>
-
-            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="px-5 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-              >
-                <WhatsAppIcon size={16} fill="#ffffff" />
-                <span>Instant WhatsApp RFQ</span>
-              </a>
-
-              <button
-                onClick={() => {
-                  onClose();
-                  onOpenQuote(product);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold text-xs shadow-md shadow-orange-500/20 cursor-pointer transition-all"
-              >
-                Request Quotation
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>
+        </div>
+      </motion.div>
+    </div>
   );
 }
+
+

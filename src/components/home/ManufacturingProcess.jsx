@@ -21,8 +21,8 @@ const ManufacturingProcess = () => {
     {
       step: "03",
       icon: Cpu,
-      title: "CNC Precision Machining",
-      desc: "Computer numerical controlled CNC turning and boring machines ensure micron-level groove angles and bore tolerances.",
+      title: "Precision Lathe Machining & Boring",
+      desc: "Heavy-duty precision lathe and boring machines ensure micron-level groove angles and tight bore tolerances.",
       color: "bg-emerald-50 text-emerald-600 border-emerald-200"
     },
     {

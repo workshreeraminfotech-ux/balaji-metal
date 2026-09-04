@@ -164,7 +164,7 @@ VALUES
   'V-Belt Pulley', 'v-belt-pulley',
   (SELECT id FROM categories WHERE slug='pulleys'),
   'Precision-machined V-belt pulleys dynamically balanced for smooth energy transmission and extended belt life.',
-  'Manufactured with high-grade cast iron and CNC-turned grooves, our V-Belt Pulleys ensure precise belt fitment, minimal slippage, and maximum drive efficiency.',
+  'Manufactured with high-grade cast iron and precision-turned grooves, our V-Belt Pulleys ensure precise belt fitment, minimal slippage, and maximum drive efficiency.',
   '["Dynamically balanced for vibration-free running","Standard Taper Lock Bush or Pilot Bore fitment","Accurate groove angle profile","High wear resistance","Corrosion-protective coating"]',
   'Cast Iron (Grade FG 200/250) / Ductile Iron',
   '["SPA (1 to 6 Grooves)","SPB (1 to 10 Grooves)","SPC (2 to 12 Grooves)","SPZ (1 to 6 Grooves)"]',

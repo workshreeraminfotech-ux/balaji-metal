@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import SEO from '@/components/ui/SEO';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import Input from '@/components/ui/Input';
@@ -7,24 +8,38 @@ import { useInquiries } from '@/hooks/useInquiries';
 import { 
   Phone, Mail, MapPin, Clock, Send, MessageSquare, 
   CheckCircle2, ShieldCheck, ArrowRight, Building, 
-  Sparkles, FileText, ChevronRight
+  Sparkles, FileText, ChevronRight, PackageCheck
 } from 'lucide-react';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { COMPANY_INFO } from '@/data/companyData';
+import { useSettings } from '@/hooks/useSettings';
 
 export default function ContactPage() {
+  const { settings } = useSettings();
+  const [searchParams] = useSearchParams();
+  const productParam = searchParams.get('product') || '';
   const { submitInquiry, loading } = useInquiries();
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     company: '',
-    subject: 'Request Quotation',
-    message: ''
+    subject: productParam ? `Quote: ${productParam}` : 'Request Quotation',
+    message: productParam ? `Hello, I would like to get a price quotation and delivery timeline for ${productParam}.` : ''
   });
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (productParam) {
+      setFormData(prev => ({
+        ...prev,
+        subject: `Quote: ${productParam}`,
+        message: prev.message || `Hello, I would like to get a price quotation and delivery timeline for ${productParam}.`
+      }));
+    }
+  }, [productParam]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,7 +56,7 @@ export default function ContactPage() {
       email: '',
       phone: '',
       company: '',
-      subject: 'Request Quotation',
+      subject: productParam ? `Quote: ${productParam}` : 'Request Quotation',
       message: ''
     });
   };
@@ -110,6 +125,16 @@ export default function ContactPage() {
                 Fill out your requirement below and we will respond with an official quotation.
               </p>
             </div>
+
+            {productParam && (
+              <div className="p-3.5 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-between gap-3 text-orange-900 text-xs sm:text-sm font-semibold">
+                <div className="flex items-center gap-2">
+                  <PackageCheck size={18} className="text-orange-600 shrink-0" />
+                  <span>Selected Product: <strong className="font-black text-slate-900">{productParam}</strong></span>
+                </div>
+                <span className="text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md">RFQ Active</span>
+              </div>
+            )}
 
             {submitted && (
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 text-emerald-800 text-sm font-semibold">
@@ -237,11 +262,11 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <span className="block text-[10px] text-slate-500 uppercase font-bold">Direct Hotline</span>
-                    <a href={`tel:${COMPANY_INFO.phones[0].raw}`} className="text-slate-900 font-bold hover:text-orange-600 transition-colors block">
-                      {COMPANY_INFO.phones[0].display}
+                    <a href={`tel:${settings.phones?.[0]?.raw || settings.primary_phone || '+917600060193'}`} className="text-slate-900 font-bold hover:text-orange-600 transition-colors block">
+                      {settings.primary_phone || settings.phones?.[0]?.display || '+91-76000 60193'}
                     </a>
-                    <a href={`tel:${COMPANY_INFO.phones[1].raw}`} className="text-slate-600 hover:text-orange-600 transition-colors block text-xs mt-0.5 font-medium">
-                      {COMPANY_INFO.phones[1].display}
+                    <a href={`tel:${settings.phones?.[1]?.raw || settings.secondary_phone || '+917096070727'}`} className="text-slate-600 hover:text-orange-600 transition-colors block text-xs mt-0.5 font-medium">
+                      {settings.secondary_phone || settings.phones?.[1]?.display || '+91-70960 70727'}
                     </a>
                   </div>
                 </div>
@@ -253,8 +278,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <span className="block text-[10px] text-slate-500 uppercase font-bold">Official Email</span>
-                    <a href={`mailto:${COMPANY_INFO.email}`} className="text-slate-900 font-bold hover:text-orange-600 transition-colors break-all">
-                      {COMPANY_INFO.email}
+                    <a href={`mailto:${settings.email || settings.company_email || 'Balajimetal5302@gmail.com'}`} className="text-slate-900 font-bold hover:text-orange-600 transition-colors break-all">
+                      {settings.email || settings.company_email || 'Balajimetal5302@gmail.com'}
                     </a>
                   </div>
                 </div>
@@ -267,9 +292,7 @@ export default function ContactPage() {
                   <div>
                     <span className="block text-[10px] text-slate-500 uppercase font-bold">Factory Address</span>
                     <p className="text-slate-700 text-xs leading-relaxed mt-0.5 font-medium">
-                      {COMPANY_INFO.address.line1},<br />
-                      {COMPANY_INFO.address.line2},<br />
-                      {COMPANY_INFO.address.city}, {COMPANY_INFO.address.state} - {COMPANY_INFO.address.pincode}
+                      {settings.company_address || settings.address?.full || 'Balaji Metal, P. 43/44, Main Road, Ta. Kotda Sangani, Veraval (Shapar - Padavala Industrial Zone), Rajkot, Gujarat - 360025'}
                     </p>
                   </div>
                 </div>
@@ -281,7 +304,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <span className="block text-[10px] text-slate-500 uppercase font-bold">Business Hours</span>
-                    <p className="text-slate-700 text-xs mt-0.5 font-medium">{COMPANY_INFO.businessHours}</p>
+                    <p className="text-slate-700 text-xs mt-0.5 font-medium">{settings.working_hours || settings.business_hours || 'Mon - Sat: 9:00 AM - 7:00 PM (Sunday: Closed)'}</p>
                   </div>
                 </div>
               </div>
@@ -289,7 +312,7 @@ export default function ContactPage() {
 
             {/* Instant WhatsApp Action */}
             <a 
-              href={`https://wa.me/${COMPANY_INFO.whatsapp.replace('+', '')}?text=Hello%20Balaji%20Metal,%20I%20am%20contacting%20you%20via%20your%20website%20to%20request%20a%20product%20quotation.`}
+              href={`https://wa.me/${(settings.whatsapp_number || settings.company_whatsapp || settings.whatsapp || '917600060193').replace('+', '')}?text=Hello%20Balaji%20Metal,%20I%20am%20contacting%20you%20via%20your%20website%20to%20request%20a%20product%20quotation.`}
               target="_blank" 
               rel="noreferrer"
               className="block bg-[#25D366] hover:bg-[#20bd5a] text-white p-6 rounded-3xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] text-center cursor-pointer group"
@@ -309,7 +332,7 @@ export default function ContactPage() {
           <div className="p-3 mb-2 flex justify-between items-center text-xs text-slate-600">
             <span className="font-bold text-slate-900">Factory Location Map (Kotda Sangani / Veraval, Gujarat)</span>
             <a 
-              href={COMPANY_INFO.googleMapsDirections} 
+              href={settings.googleMapsDirections || 'https://maps.google.com/?q=Balaji+Metal+Kotda+Sangani+Veraval+Rajkot+Gujarat+360025'} 
               target="_blank" 
               rel="noreferrer"
               className="text-orange-600 hover:underline font-bold"
@@ -318,7 +341,7 @@ export default function ContactPage() {
             </a>
           </div>
           <iframe 
-            src={COMPANY_INFO.googleMapsUrl} 
+            src={settings.google_maps_embed || settings.googleMapsUrl || 'https://www.google.com/maps?q=Balaji+Metal%2C+P.+43%2F44%2C+Main+Road%2C+Ta.+Kotda+Sangani%2C+Veraval%2C+Rajkot%2C+Gujarat+360025&output=embed'} 
             width="100%" 
             height="400" 
             style={{ border: 0 }} 

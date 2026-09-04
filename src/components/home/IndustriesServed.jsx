@@ -42,7 +42,7 @@ const IndustriesServed = () => {
     },
     {
       icon: Cog,
-      name: "Machine Tools & CNCs",
+      name: "Machine Tools & Machinery",
       description: "Industrial lathe headstocks, milling feed controls, and precision cast iron hand wheels.",
       color: "bg-slate-100 text-slate-700 border-slate-300"
     },

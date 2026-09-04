@@ -33,17 +33,6 @@ const CompanyIntro = () => {
                 <Award size={15} className="text-orange-600" />
                 <span className="text-xs font-bold text-slate-900">ISO 9001:2015 Facility</span>
               </div>
-
-              {/* Bottom Facility Tag */}
-              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-lg flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Kotda Sangani / Veraval Facility</p>
-                  <p className="text-xs sm:text-sm font-bold text-slate-900">CNC Precision Machining & Dynamic Balancing</p>
-                </div>
-                <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shrink-0 ml-3">
-                  <Cpu size={18} />
-                </div>
-              </div>
             </div>
           </motion.div>
 
