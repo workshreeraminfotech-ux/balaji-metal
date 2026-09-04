@@ -1,5 +1,6 @@
 import { PRODUCTS, CATEGORIES } from '@/data/productsData';
 import { COMPANY_INFO } from '@/data/companyData';
+import { firebaseService } from '@/services/firebaseService';
 
 const STORAGE_KEYS = {
   PRODUCTS: 'balaji_metal_products',
@@ -12,7 +13,7 @@ const STORAGE_KEYS = {
 
 const SAMPLE_INQUIRIES = [
   {
-    id: 1,
+    id: '1',
     name: 'Rajesh Sharma',
     company_name: 'Gujarat Heavy Industries Ltd',
     email: 'rajesh.sharma@ghiltd.com',
@@ -25,7 +26,7 @@ const SAMPLE_INQUIRIES = [
     created_at: new Date(Date.now() - 3600000 * 2).toISOString()
   },
   {
-    id: 2,
+    id: '2',
     name: 'Vikram Patel',
     company_name: 'Apex Petrochem Machines',
     email: 'vpatel@apexmachines.in',
@@ -38,6 +39,57 @@ const SAMPLE_INQUIRIES = [
     created_at: new Date(Date.now() - 3600000 * 24).toISOString()
   }
 ];
+
+// Initialize real-time cloud listeners if Firebase is configured
+let isCloudListening = false;
+
+function initFirebaseListeners() {
+  if (isCloudListening || !firebaseService.isConfigured()) return;
+  isCloudListening = true;
+
+  try {
+    // Products Listener
+    firebaseService.subscribeProducts((cloudProducts) => {
+      if (Array.isArray(cloudProducts) && cloudProducts.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cloudProducts));
+        storageService.notifyChange('products', cloudProducts);
+      }
+    });
+
+    // Categories Listener
+    firebaseService.subscribeCategories((cloudCategories) => {
+      if (Array.isArray(cloudCategories) && cloudCategories.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cloudCategories));
+        storageService.notifyChange('categories', cloudCategories);
+      }
+    });
+
+    // Inquiries Listener
+    firebaseService.subscribeInquiries((cloudInquiries) => {
+      if (Array.isArray(cloudInquiries)) {
+        localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(cloudInquiries));
+        storageService.notifyChange('inquiries', cloudInquiries);
+      }
+    });
+
+    // Settings Listener
+    firebaseService.subscribeSettings((cloudSettings) => {
+      if (cloudSettings) {
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(cloudSettings));
+        storageService.notifyChange('settings', cloudSettings);
+      }
+    });
+
+    console.log('⚡ Firebase Realtime Cloud Sync Active');
+  } catch (err) {
+    console.error('Firebase real-time listener error:', err);
+  }
+}
+
+// Start listeners immediately on load
+if (typeof window !== 'undefined') {
+  initFirebaseListeners();
+}
 
 export const storageService = {
   // Broadcast update event
@@ -86,40 +138,49 @@ export const storageService = {
     return products.find(p => String(p.id) === String(id)) || null;
   },
 
-  saveProduct: (productData) => {
-    const products = storageService.getProducts();
+  saveProduct: async (productData) => {
     const categories = storageService.getCategories();
-    
-    // Find category details
     const category = categories.find(c => String(c.id) === String(productData.category_id)) || {};
     
+    const enrichedData = {
+      ...productData,
+      category_name: category.name || productData.category_name || 'Industrial Components',
+      category_slug: category.slug || productData.category_slug || 'couplings'
+    };
+
+    // 1. Sync with Firebase if configured
+    if (firebaseService.isConfigured()) {
+      try {
+        const saved = await firebaseService.saveProduct(enrichedData);
+        return saved;
+      } catch (err) {
+        console.warn('Firebase save failed, falling back to local storage:', err);
+      }
+    }
+
+    // 2. Local fallback
+    const products = storageService.getProducts();
     let updatedProducts;
     if (productData.id) {
-      // Edit
       updatedProducts = products.map(p => {
         if (String(p.id) === String(productData.id)) {
           return {
             ...p,
-            ...productData,
-            category_name: category.name || p.category_name || 'Industrial Components',
-            category_slug: category.slug || p.category_slug || 'couplings',
+            ...enrichedData,
             updated_at: new Date().toISOString()
           };
         }
         return p;
       });
     } else {
-      // New Product
       const newId = products.length > 0 ? Math.max(...products.map(p => Number(p.id) || 0)) + 1 : 1;
       const slug = productData.slug || (productData.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const defaultImg = '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg';
       const mainImg = productData.image || defaultImg;
       const newProduct = {
-        ...productData,
-        id: newId,
+        ...enrichedData,
+        id: String(newId),
         slug,
-        category_name: category.name || 'Industrial Components',
-        category_slug: category.slug || 'couplings',
         image: mainImg,
         gallery: productData.gallery && productData.gallery.length > 0 ? productData.gallery : [mainImg],
         features: productData.features || [],
@@ -138,7 +199,14 @@ export const storageService = {
     return updatedProducts;
   },
 
-  deleteProduct: (id) => {
+  deleteProduct: async (id) => {
+    if (firebaseService.isConfigured()) {
+      try {
+        await firebaseService.deleteProduct(id);
+      } catch (err) {
+        console.warn('Firebase delete failed:', err);
+      }
+    }
     const products = storageService.getProducts();
     const filtered = products.filter(p => String(p.id) !== String(id));
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
@@ -164,7 +232,15 @@ export const storageService = {
     }
   },
 
-  saveCategory: (categoryData) => {
+  saveCategory: async (categoryData) => {
+    if (firebaseService.isConfigured()) {
+      try {
+        const saved = await firebaseService.saveCategory(categoryData);
+        return saved;
+      } catch (err) {
+        console.warn('Firebase save category failed:', err);
+      }
+    }
     const categories = storageService.getCategories();
     let updated;
     if (categoryData.id) {
@@ -174,7 +250,7 @@ export const storageService = {
       const slug = categoryData.slug || (categoryData.name || 'category').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const newCat = {
         ...categoryData,
-        id: newId,
+        id: String(newId),
         slug,
         shortName: categoryData.shortName || categoryData.name,
         productCount: 0
@@ -186,7 +262,14 @@ export const storageService = {
     return updated;
   },
 
-  deleteCategory: (id) => {
+  deleteCategory: async (id) => {
+    if (firebaseService.isConfigured()) {
+      try {
+        await firebaseService.deleteCategory(id);
+      } catch (err) {
+        console.warn('Firebase delete category failed:', err);
+      }
+    }
     const categories = storageService.getCategories();
     const filtered = categories.filter(c => String(c.id) !== String(id));
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
@@ -209,12 +292,20 @@ export const storageService = {
     }
   },
 
-  addInquiry: (inquiryData) => {
+  addInquiry: async (inquiryData) => {
+    if (firebaseService.isConfigured()) {
+      try {
+        const saved = await firebaseService.addInquiry(inquiryData);
+        return saved;
+      } catch (err) {
+        console.warn('Firebase add inquiry failed:', err);
+      }
+    }
     const inquiries = storageService.getInquiries();
     const newId = inquiries.length > 0 ? Math.max(...inquiries.map(i => Number(i.id) || 0)) + 1 : 1;
     const newInquiry = {
       ...inquiryData,
-      id: newId,
+      id: String(newId),
       company_name: inquiryData.company_name || inquiryData.company || '',
       product_interest: inquiryData.product_interest || inquiryData.product_name || '',
       status: 'new',
@@ -226,7 +317,14 @@ export const storageService = {
     return newInquiry;
   },
 
-  updateInquiryStatus: (id, status) => {
+  updateInquiryStatus: async (id, status) => {
+    if (firebaseService.isConfigured()) {
+      try {
+        await firebaseService.updateInquiryStatus(id, status);
+      } catch (err) {
+        console.warn('Firebase update inquiry status failed:', err);
+      }
+    }
     const inquiries = storageService.getInquiries();
     const updated = inquiries.map(i => String(i.id) === String(id) ? { ...i, status } : i);
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
@@ -234,7 +332,14 @@ export const storageService = {
     return updated;
   },
 
-  deleteInquiry: (id) => {
+  deleteInquiry: async (id) => {
+    if (firebaseService.isConfigured()) {
+      try {
+        await firebaseService.deleteInquiry(id);
+      } catch (err) {
+        console.warn('Firebase delete inquiry failed:', err);
+      }
+    }
     const inquiries = storageService.getInquiries();
     const filtered = inquiries.filter(i => String(i.id) !== String(id));
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(filtered));
@@ -296,7 +401,14 @@ export const storageService = {
     }
   },
 
-  saveSettings: (settingsData) => {
+  saveSettings: async (settingsData) => {
+    if (firebaseService.isConfigured()) {
+      try {
+        await firebaseService.saveSettings(settingsData);
+      } catch (err) {
+        console.warn('Firebase save settings failed:', err);
+      }
+    }
     const current = storageService.getSettings();
     const primaryPhone = settingsData.primary_phone || settingsData.company_phone || current.primary_phone;
     const secondaryPhone = settingsData.secondary_phone || settingsData.company_phone_2 || current.secondary_phone;
@@ -372,7 +484,6 @@ export const storageService = {
 
   login: (email, password) => {
     const storedUser = storageService.getAuthUser();
-    // Default admin password check
     if (storedUser && storedUser.password) {
       if (storedUser.password !== password) {
         return { success: false, message: 'Invalid password' };
@@ -407,4 +518,3 @@ export const storageService = {
     storageService.notifyChange('all');
   }
 };
-
