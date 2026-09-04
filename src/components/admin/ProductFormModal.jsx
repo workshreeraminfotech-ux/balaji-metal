@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Plus, Trash2, Check, Upload, 
-  Sparkles, Layers, Building2, Image as ImageIcon 
+  Sparkles, Layers, Building2, Image as ImageIcon, Loader2 
 } from 'lucide-react';
 import { storageService } from '@/utils/storageService';
+import { firebaseService } from '@/services/firebaseService';
 
 export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
   const categories = storageService.getCategories();
@@ -22,6 +23,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
     is_featured: true
   });
 
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -267,30 +269,58 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
               </div>
               
               {/* File Upload Button */}
-              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs cursor-pointer transition-colors shrink-0">
-                <Upload size={14} />
-                <span>Upload From Device</span>
+              <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs cursor-pointer transition-colors shrink-0 ${uploadingImage ? 'opacity-70 pointer-events-none' : ''}`}>
+                {uploadingImage ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                <span>{uploadingImage ? 'Uploading...' : 'Upload From Device'}</span>
                 <input 
                   type="file" 
                   accept="image/*" 
                   className="hidden" 
-                  onChange={(e) => {
+                  disabled={uploadingImage}
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    if (file.size > 3 * 1024 * 1024) {
-                      setError('Image size should be under 3MB');
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError('Image size should be under 5MB');
                       return;
                     }
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      const dataUrl = reader.result;
+                    try {
+                      setUploadingImage(true);
+                      setError('');
+                      let uploadedUrl = '';
+                      if (firebaseService.isConfigured()) {
+                        try {
+                          uploadedUrl = await firebaseService.uploadImage(file, 'products');
+                        } catch (uploadErr) {
+                          console.warn('Firebase storage upload failed, using Data URL:', uploadErr);
+                        }
+                      }
+                      
+                      if (!uploadedUrl) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const dataUrl = reader.result;
+                          setFormData(prev => ({
+                            ...prev,
+                            image: dataUrl,
+                            galleryText: prev.galleryText ? `${dataUrl}\n${prev.galleryText}` : dataUrl
+                          }));
+                          setUploadingImage(false);
+                        };
+                        reader.readAsDataURL(file);
+                        return;
+                      }
+
                       setFormData(prev => ({
                         ...prev,
-                        image: dataUrl,
-                        galleryText: prev.galleryText ? `${dataUrl}\n${prev.galleryText}` : dataUrl
+                        image: uploadedUrl,
+                        galleryText: prev.galleryText ? `${uploadedUrl}\n${prev.galleryText}` : uploadedUrl
                       }));
-                    };
-                    reader.readAsDataURL(file);
+                    } catch (err) {
+                      setError('Failed to upload image: ' + (err.message || 'Unknown error'));
+                    } finally {
+                      setUploadingImage(false);
+                    }
                   }}
                 />
               </label>

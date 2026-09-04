@@ -39,13 +39,13 @@ export default function AdminProductsPage() {
     setIsModalOpen(true);
   };
 
-  const handleSaveProduct = (productData) => {
-    storageService.saveProduct(productData);
+  const handleSaveProduct = async (productData) => {
+    await storageService.saveProduct(productData);
     loadData();
   };
 
-  const handleDeleteProduct = (id) => {
-    storageService.deleteProduct(id);
+  const handleDeleteProduct = async (id) => {
+    await storageService.deleteProduct(id);
     setDeleteConfirmId(null);
     loadData();
   };

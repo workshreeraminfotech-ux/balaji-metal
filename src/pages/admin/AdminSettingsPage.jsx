@@ -28,9 +28,9 @@ export default function AdminSettingsPage() {
     }
   }, []);
 
-  const handleSaveCompanyInfo = (e) => {
+  const handleSaveCompanyInfo = async (e) => {
     e.preventDefault();
-    storageService.saveSettings(settings);
+    await storageService.saveSettings(settings);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };

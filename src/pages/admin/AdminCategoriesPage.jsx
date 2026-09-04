@@ -37,13 +37,13 @@ export default function AdminCategoriesPage() {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
     const slug = formData.slug.trim() || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     
-    storageService.saveCategory({
+    await storageService.saveCategory({
       ...(editingCategory ? { id: editingCategory.id } : {}),
       name: formData.name.trim(),
       slug,
@@ -55,9 +55,9 @@ export default function AdminCategoriesPage() {
     loadData();
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
-      storageService.deleteCategory(id);
+      await storageService.deleteCategory(id);
       loadData();
     }
   };
