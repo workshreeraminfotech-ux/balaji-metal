@@ -31,8 +31,7 @@ export default function AdminLayout() {
       icon: MessageSquareText,
       badge: newInquiriesCount > 0 ? newInquiriesCount : null 
     },
-    { to: '/admin/categories', label: 'Categories', icon: FolderTree },
-    { to: '/admin/settings', label: 'Settings', icon: Settings }
+    { to: '/admin/categories', label: 'Categories', icon: FolderTree }
   ];
 
   return (

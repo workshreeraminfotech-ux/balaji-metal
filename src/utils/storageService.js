@@ -482,17 +482,23 @@ export const storageService = {
     return userData;
   },
 
-  login: (email, password) => {
+  login: (identifier, password) => {
+    const cleanId = (identifier || '').trim().toLowerCase();
+    const cleanPass = (password || '').trim();
+
     const storedUser = storageService.getAuthUser();
-    if (storedUser && storedUser.password) {
-      if (storedUser.password !== password) {
-        return { success: false, message: 'Invalid password' };
-      }
+    const isValidId = cleanId === 'balaji metal' || cleanId === 'balajimetal' || cleanId === 'balajimetal5302@gmail.com' || cleanId === 'admin@balajimetal.com';
+    const expectedPassword = (storedUser && storedUser.password) ? storedUser.password : 'balajimetal@789';
+
+    if (!isValidId || cleanPass !== expectedPassword) {
+      return { success: false, message: 'Invalid Admin ID or Password' };
     }
+
     const adminUser = {
       id: 1,
-      name: 'Balaji Administrator',
-      email: email || 'admin@balajimetal.com',
+      name: 'Balaji Metal Admin',
+      username: 'balaji metal',
+      email: 'balajimetal5302@gmail.com',
       role: 'admin',
       ...(storedUser || {})
     };

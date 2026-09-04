@@ -24,7 +24,6 @@ import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
 import AdminProductsPage from '@/pages/admin/AdminProductsPage';
 import AdminInquiriesPage from '@/pages/admin/AdminInquiriesPage';
 import AdminCategoriesPage from '@/pages/admin/AdminCategoriesPage';
-import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
 
 function App() {
   const navigate = useNavigate();
@@ -71,7 +70,6 @@ function App() {
               <Route path="products" element={<AdminProductsPage />} />
               <Route path="inquiries" element={<AdminInquiriesPage />} />
               <Route path="categories" element={<AdminCategoriesPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
           </Route>
 

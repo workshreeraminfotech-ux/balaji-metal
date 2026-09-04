@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Shield, Lock, Mail, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Shield, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import SEO from '@/components/ui/SEO';
 
@@ -9,8 +9,8 @@ export default function AdminLoginPage() {
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
 
-  const [email, setEmail] = useState('admin@balajimetal.com');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,15 +29,15 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const result = await login(email, password);
+      const result = await login(username, password);
       if (result.success) {
         const from = location.state?.from?.pathname || '/admin';
         navigate(from, { replace: true });
       } else {
-        setError(result.message || 'Invalid credentials');
+        setError(result.message || 'Invalid Admin ID or Password');
       }
     } catch (err) {
-      setError(err.message || 'Login failed. Please check credentials.');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -78,18 +78,19 @@ export default function AdminLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-              Admin Email
+              Admin ID
             </label>
             <div className="relative">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@balajimetal.com"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter Admin ID"
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-4 py-3 text-slate-900 placeholder-slate-400 text-sm focus:border-orange-500 focus:bg-white focus:outline-none transition-all"
                 required
+                autoFocus
               />
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
           </div>
 
@@ -102,7 +103,7 @@ export default function AdminLoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter Password"
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-11 py-3 text-slate-900 placeholder-slate-400 text-sm focus:border-orange-500 focus:bg-white focus:outline-none transition-all"
                 required
               />
@@ -115,13 +116,6 @@ export default function AdminLoginPage() {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-          </div>
-
-          {/* Quick Helper Credentials Note */}
-          <div className="p-3.5 rounded-2xl bg-orange-50/70 border border-orange-200/80 text-[11px] text-slate-600 space-y-1">
-            <div className="font-bold text-orange-700">Default Demo Credentials:</div>
-            <div>Email: <code className="text-slate-800 font-mono font-bold">admin@balajimetal.com</code></div>
-            <div>Password: <code className="text-slate-800 font-mono font-bold">admin123</code></div>
           </div>
 
           <button
