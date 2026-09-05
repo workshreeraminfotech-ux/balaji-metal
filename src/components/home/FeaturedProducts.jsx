@@ -29,14 +29,13 @@ const FeaturedProducts = () => {
     const interval = setInterval(() => {
       if (scrollRef.current) {
         const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-        // If reached end, smoothly loop back to start
         if (scrollLeft + clientWidth >= scrollWidth - 20) {
           scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
           scrollRef.current.scrollBy({ left: 360, behavior: 'smooth' });
         }
       }
-    }, 3000); // scrolls every 3 seconds
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [isPaused]);
@@ -61,27 +60,27 @@ const FeaturedProducts = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold shadow-xs">
+        {/* Section Header with Navigation */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold w-fit">
               <Award size={14} className="text-orange-600" />
-              <span>ISO 9001:2015 & ISO 1940 Dynamic Balancing</span>
+              <span>Standard & Custom Product Range</span>
             </div>
             
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-slate-900 tracking-tight leading-tight">
-              Featured Power Transmission <br className="hidden sm:inline" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500">
-                Products & Castings
+              Precision Power Transmission <br />
+              <span className="text-orange-600">
+                Products Lineup
               </span>
             </h2>
-            
-            <p className="text-slate-600 text-sm sm:text-base font-medium">
+
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
               Heavy-duty Pin Bush Couplings, Star Spider Couplings, and precision machined V-Belt Pulleys manufactured in Rajkot.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-3">
             {/* Scroll Navigation Arrow Buttons */}
             <div className="flex items-center gap-2">
               <button
@@ -104,8 +103,8 @@ const FeaturedProducts = () => {
               </button>
             </div>
 
-            {/* Prominent High-Contrast All Products Button */}
-            <Link to="/products" className="inline-flex shrink-0">
+            {/* Desktop Only: Prominent All Products Button */}
+            <Link to="/products" className="hidden sm:inline-flex shrink-0">
               <button 
                 type="button"
                 className="bg-slate-900 hover:bg-orange-600 text-white font-bold px-5 py-3 rounded-2xl text-sm flex items-center gap-2.5 shadow-md shadow-slate-900/20 hover:shadow-orange-600/30 transition-all cursor-pointer hover:scale-105"
@@ -140,12 +139,16 @@ const FeaturedProducts = () => {
           ))}
         </div>
 
-        {/* Mobile View All Button */}
-        <div className="text-center mt-6 md:hidden">
-          <Link to="/products">
-            <Button className="w-full bg-white text-orange-600 border border-slate-300 py-3.5 rounded-2xl text-sm font-bold shadow-xs">
-              View All Products ({products.length})
-            </Button>
+        {/* Mobile Only: "All Products (5)" Button placed at the very bottom under products */}
+        <div className="mt-8 block sm:hidden">
+          <Link to="/products" className="block w-full">
+            <button 
+              type="button"
+              className="w-full bg-slate-900 hover:bg-orange-600 text-white font-bold py-3.5 px-6 rounded-2xl text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-slate-900/20 active:scale-98 transition-all cursor-pointer"
+            >
+              <span>All Products ({products.length})</span>
+              <ArrowRight size={16} className="text-amber-400" />
+            </button>
           </Link>
         </div>
 
