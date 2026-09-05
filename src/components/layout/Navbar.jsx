@@ -46,6 +46,18 @@ export default function Navbar() {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Prevent background scroll when mobile drawer is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'About Us', path: '/about' },
@@ -55,36 +67,36 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Top Announcement Bar - Clean Corporate */}
+      {/* Top Announcement Bar - Visible on Mobile & Desktop */}
       <div 
         className={cn(
-          "hidden lg:block bg-slate-900 text-slate-200 text-xs py-2 px-6 fixed top-0 left-0 right-0 z-50 border-b border-slate-800 transition-all duration-300",
+          "bg-slate-900 text-slate-200 text-[11px] sm:text-xs py-2 px-3.5 sm:px-6 fixed top-0 left-0 right-0 z-40 border-b border-slate-800 transition-all duration-300",
           isScrolled ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
         )}
       >
-        <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
-          {/* Full Address */}
-          <div className="flex items-center gap-2 text-slate-300 truncate">
-            <MapPin size={13} className="text-amber-400 shrink-0" />
-            <span className="truncate">
-              {COMPANY_INFO.address.full}
+        <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
+          {/* Location / Tagline */}
+          <div className="flex items-center gap-1.5 text-slate-300 truncate">
+            <MapPin size={12} className="text-amber-400 shrink-0" />
+            <span className="truncate font-medium">
+              GIDC Aji Vasahat, Rajkot, Gujarat
             </span>
           </div>
 
           {/* Contact Details */}
-          <div className="flex items-center gap-6 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-6 shrink-0">
             <a 
               href={`tel:${COMPANY_INFO.phones[0].raw}`}
               className="flex items-center gap-1.5 text-slate-200 hover:text-amber-400 transition-colors"
             >
-              <Phone size={13} className="text-amber-400" />
+              <Phone size={12} className="text-amber-400 shrink-0" />
               <span className="font-semibold">{COMPANY_INFO.phones[0].display}</span>
             </a>
             <a 
               href={`mailto:${COMPANY_INFO.email}`} 
-              className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold transition-colors"
+              className="hidden sm:flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold transition-colors"
             >
-              <Mail size={13} className="text-amber-400" />
+              <Mail size={12} className="text-amber-400 shrink-0" />
               <span>{COMPANY_INFO.email}</span>
             </a>
           </div>
@@ -94,10 +106,10 @@ export default function Navbar() {
       {/* Main Clean White Navbar */}
       <header
         className={cn(
-          'fixed z-40 w-full transition-all duration-300',
+          'fixed z-30 w-full transition-all duration-300',
           isScrolled
-            ? 'top-0 bg-white/95 backdrop-blur-md shadow-md shadow-slate-200/50 border-b border-slate-200/80 py-3'
-            : 'top-0 lg:top-[33px] bg-white/90 backdrop-blur-sm border-b border-slate-100 py-4'
+            ? 'top-0 bg-white/95 backdrop-blur-md shadow-md shadow-slate-200/50 border-b border-slate-200/80 py-2.5 sm:py-3'
+            : 'top-[33px] bg-white/95 backdrop-blur-md border-b border-slate-100 py-3 sm:py-4'
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,15 +119,15 @@ export default function Navbar() {
               <Link 
                 to="/" 
                 onClick={handleLogoClick} 
-                className="flex items-center gap-3 group focus:outline-none"
+                className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none"
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-0.5 shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
-                  <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center font-heading font-black text-xl text-amber-400">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-0.5 shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
+                  <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center font-heading font-black text-lg sm:text-xl text-amber-400">
                     BM
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-heading text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-1">
+                  <span className="font-heading text-lg sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-1">
                     BALAJI <span className="text-orange-600">METAL</span>
                   </span>
                   <span className="text-[10px] tracking-wider uppercase font-semibold text-slate-500 -mt-1 hidden sm:block">
@@ -163,128 +175,147 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Action Buttons */}
-            <div className="flex items-center gap-2.5 md:hidden">
+            <div className="flex items-center gap-2 md:hidden">
               <a
-                href={`mailto:${COMPANY_INFO.email}`}
-                className="p-2 rounded-xl bg-orange-50 text-orange-600 border border-orange-200"
-                aria-label="Email Us"
+                href={`tel:${COMPANY_INFO.phones[0].raw}`}
+                className="p-2.5 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 active:scale-95 transition-all"
+                aria-label="Call Us"
               >
-                <Mail size={18} />
+                <Phone size={18} />
               </a>
               <button
-                className="text-slate-700 hover:text-slate-900 p-2 rounded-xl bg-slate-100 border border-slate-200 focus:outline-none"
+                type="button"
+                className="text-slate-800 hover:text-slate-900 p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 focus:outline-none active:scale-95 transition-all"
                 onClick={() => setIsMobileMenuOpen(true)}
                 aria-label="Open menu"
               >
-                <Menu className="h-6 w-6" />
+                <Menu className="h-5 w-5" />
               </button>
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Mobile Drawer */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 md:hidden"
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                className="fixed right-0 top-0 bottom-0 w-4/5 max-w-sm bg-white border-l border-slate-200 z-50 p-6 flex flex-col md:hidden overflow-y-auto shadow-2xl"
-              >
-                <div className="flex items-center justify-between pb-6 border-b border-slate-100">
-                  <Link 
-                    to="/" 
-                    onClick={handleLogoClick}
-                    className="flex items-center gap-2.5 focus:outline-none"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-0.5 shadow-md">
-                      <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center font-heading font-black text-lg text-amber-400">
-                        BM
-                      </div>
+      {/* Mobile Drawer (Rendered outside header at root level with high z-index) */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-[9999] md:hidden">
+            {/* Backdrop Blur Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+
+            {/* Drawer Container */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              className="fixed right-0 top-0 bottom-0 w-[85%] max-w-[340px] bg-white border-l border-slate-200 shadow-2xl flex flex-col z-[10000] overflow-y-auto"
+            >
+              {/* Drawer Top Header */}
+              <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10">
+                <Link 
+                  to="/" 
+                  onClick={handleLogoClick}
+                  className="flex items-center gap-2.5 focus:outline-none"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-0.5 shadow-md">
+                    <div className="w-full h-full bg-slate-900 rounded-[9px] flex items-center justify-center font-heading font-black text-sm text-amber-400">
+                      BM
                     </div>
-                    <span className="font-heading text-lg font-black text-slate-900">
-                      BALAJI <span className="text-orange-600">METAL</span>
-                    </span>
-                  </Link>
-                  <button
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 border border-slate-200"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
+                  </div>
+                  <span className="font-heading text-base font-black text-slate-900">
+                    BALAJI <span className="text-orange-600">METAL</span>
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-slate-500 hover:text-slate-800 p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 active:scale-95 transition-all"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-                <ul className="flex flex-col gap-2">
-                  {navLinks.map((link) => (
-                    <li key={link.name}>
-                      <NavLink
-                        to={link.path}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={({ isActive }) =>
-                          cn(
-                            'block text-base font-semibold py-3 px-4 rounded-xl transition-colors',
-                            isActive 
-                              ? 'bg-orange-50 text-orange-600 border border-orange-200 font-bold' 
-                              : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-                          )
-                        }
-                      >
-                        {link.name}
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
+              {/* Navigation Links */}
+              <div className="p-5 flex-1 flex flex-col justify-between gap-6">
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold px-1 mb-2">Navigation</p>
+                    <ul className="flex flex-col gap-1.5">
+                      {navLinks.map((link) => (
+                        <li key={link.name}>
+                          <NavLink
+                            to={link.path}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={({ isActive }) =>
+                              cn(
+                                'block text-sm font-semibold py-2.5 px-3.5 rounded-xl transition-colors',
+                                isActive 
+                                  ? 'bg-orange-50 text-orange-600 border border-orange-200 font-bold' 
+                                  : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                              )
+                            }
+                          >
+                            {link.name}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 space-y-3">
-                  <p className="text-xs uppercase tracking-wider text-slate-400 font-bold px-1">Product Categories</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {CATEGORIES.map(cat => (
-                      <Link
-                        key={cat.id}
-                        to={`/products?category=${cat.slug}`}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:text-orange-600 hover:border-orange-300"
-                      >
-                        {cat.shortName}
-                      </Link>
-                    ))}
+                  {/* Categories Quick Links */}
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold px-1 mb-2">Product Categories</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {CATEGORIES.map(cat => (
+                        <Link
+                          key={cat.id}
+                          to={`/products?category=${cat.slug}`}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:text-orange-600 hover:border-orange-300 transition-colors"
+                        >
+                          {cat.shortName}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-auto pt-6 border-t border-slate-100 flex flex-col gap-3">
+                {/* Footer Section in Drawer */}
+                <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
                   <a 
                     href={`tel:${COMPANY_INFO.phones[0].raw}`}
-                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700"
+                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 active:scale-98 transition-all"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
-                      <Phone size={16} />
+                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                      <Phone size={17} />
                     </div>
-                    <div>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Direct Hotline</p>
-                      <p className="text-xs font-bold text-slate-900">{COMPANY_INFO.phones[0].display}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Direct Call</p>
+                      <p className="text-xs font-bold text-slate-900 truncate">{COMPANY_INFO.phones[0].display}</p>
                     </div>
                   </a>
 
                   <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3 rounded-xl shadow-md">
+                    <Button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3 rounded-xl shadow-md flex items-center justify-center gap-2">
+                      <Sparkles size={16} />
                       Request Quotation
                     </Button>
                   </Link>
                 </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </header>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
