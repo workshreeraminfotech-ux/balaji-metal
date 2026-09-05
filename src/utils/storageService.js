@@ -40,6 +40,18 @@ const SAMPLE_INQUIRIES = [
   }
 ];
 
+// Helper to deduplicate product list by ID and slug
+function deduplicateProducts(list) {
+  if (!Array.isArray(list)) return [];
+  const map = new Map();
+  for (const item of list) {
+    if (!item) continue;
+    const key = String(item.id || item.slug || item.name);
+    map.set(key, { ...(map.get(key) || {}), ...item });
+  }
+  return Array.from(map.values());
+}
+
 // Initialize real-time cloud listeners if Firebase is configured
 let isCloudListening = false;
 
@@ -51,16 +63,32 @@ function initFirebaseListeners() {
     // Products Listener
     firebaseService.subscribeProducts((cloudProducts) => {
       if (Array.isArray(cloudProducts) && cloudProducts.length > 0) {
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cloudProducts));
-        storageService.notifyChange('products', cloudProducts);
+        const local = storageService.getProducts();
+        
+        // Merge cloud with local, cloud taking priority on same IDs
+        const map = new Map();
+        local.forEach(p => map.set(String(p.id || p.slug), p));
+        cloudProducts.forEach(cp => map.set(String(cp.id || cp.slug), cp));
+
+        const merged = Array.from(map.values());
+        merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
+        storageService.notifyChange('products', merged);
       }
     });
 
     // Categories Listener
     firebaseService.subscribeCategories((cloudCategories) => {
       if (Array.isArray(cloudCategories) && cloudCategories.length > 0) {
-        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cloudCategories));
-        storageService.notifyChange('categories', cloudCategories);
+        const local = storageService.getCategories();
+        const map = new Map();
+        local.forEach(c => map.set(String(c.id || c.slug), c));
+        cloudCategories.forEach(cc => map.set(String(cc.id || cc.slug), cc));
+        const merged = Array.from(map.values());
+
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(merged));
+        storageService.notifyChange('categories', merged);
       }
     });
 
@@ -117,7 +145,7 @@ export const storageService = {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return deduplicateProducts(parsed);
         }
       }
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(PRODUCTS));
@@ -142,75 +170,78 @@ export const storageService = {
     const categories = storageService.getCategories();
     const category = categories.find(c => String(c.id) === String(productData.category_id)) || {};
     
-    const enrichedData = {
+    const products = storageService.getProducts();
+    
+    // Stable ID generation
+    const slug = productData.slug || (productData.name || 'product')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    const targetId = productData.id ? String(productData.id) : `prod_${Date.now()}`;
+    const defaultImg = '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg';
+    const mainImg = productData.image || (productData.photos && productData.photos[0]) || defaultImg;
+    const gallery = (productData.photos && productData.photos.length > 0) 
+      ? productData.photos 
+      : (productData.gallery && productData.gallery.length > 0 ? productData.gallery : [mainImg]);
+
+    const fullProduct = {
       ...productData,
+      id: targetId,
+      slug,
+      category_id: Number(productData.category_id || 1),
       category_name: category.name || productData.category_name || 'Industrial Components',
-      category_slug: category.slug || productData.category_slug || 'couplings'
+      category_slug: category.slug || productData.category_slug || 'couplings',
+      image: mainImg,
+      gallery,
+      features: Array.isArray(productData.features) ? productData.features.filter(Boolean) : [],
+      short_description: productData.short_description || '',
+      description: productData.description || productData.short_description || '',
+      is_featured: productData.is_featured !== false,
+      is_published: true,
+      created_at: productData.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    // 1. Sync with Firebase if configured
+    // 1. Update in-memory & LocalStorage immediately
+    let updatedProducts;
+    const existingIndex = products.findIndex(p => String(p.id) === String(targetId) || p.slug === slug);
+    if (existingIndex >= 0) {
+      updatedProducts = [...products];
+      updatedProducts[existingIndex] = { ...products[existingIndex], ...fullProduct };
+    } else {
+      updatedProducts = [fullProduct, ...products];
+    }
+
+    updatedProducts = deduplicateProducts(updatedProducts);
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedProducts));
+    storageService.notifyChange('products', updatedProducts);
+
+    // 2. Sync to Firebase Firestore asynchronously
     if (firebaseService.isConfigured()) {
       try {
-        const saved = await firebaseService.saveProduct(enrichedData);
-        return saved;
+        await firebaseService.saveProduct(fullProduct);
       } catch (err) {
-        console.warn('Firebase save failed, falling back to local storage:', err);
+        console.warn('Firebase saveProduct sync failed:', err);
       }
     }
 
-    // 2. Local fallback
-    const products = storageService.getProducts();
-    let updatedProducts;
-    if (productData.id) {
-      updatedProducts = products.map(p => {
-        if (String(p.id) === String(productData.id)) {
-          return {
-            ...p,
-            ...enrichedData,
-            updated_at: new Date().toISOString()
-          };
-        }
-        return p;
-      });
-    } else {
-      const newId = products.length > 0 ? Math.max(...products.map(p => Number(p.id) || 0)) + 1 : 1;
-      const slug = productData.slug || (productData.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const defaultImg = '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg';
-      const mainImg = productData.image || defaultImg;
-      const newProduct = {
-        ...enrichedData,
-        id: String(newId),
-        slug,
-        image: mainImg,
-        gallery: productData.gallery && productData.gallery.length > 0 ? productData.gallery : [mainImg],
-        features: productData.features || [],
-        specifications: productData.specifications || [],
-        applications: productData.applications || [],
-        available_sizes: productData.available_sizes || [],
-        is_featured: productData.is_featured ?? true,
-        is_published: productData.is_published ?? true,
-        created_at: new Date().toISOString()
-      };
-      updatedProducts = [newProduct, ...products];
-    }
-
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedProducts));
-    storageService.notifyChange('products');
     return updatedProducts;
   },
 
   deleteProduct: async (id) => {
+    const products = storageService.getProducts();
+    const filtered = products.filter(p => String(p.id) !== String(id));
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
+    storageService.notifyChange('products', filtered);
+
     if (firebaseService.isConfigured()) {
       try {
         await firebaseService.deleteProduct(id);
       } catch (err) {
-        console.warn('Firebase delete failed:', err);
+        console.warn('Firebase deleteProduct sync failed:', err);
       }
     }
-    const products = storageService.getProducts();
-    const filtered = products.filter(p => String(p.id) !== String(id));
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
-    storageService.notifyChange('products');
     return filtered;
   },
 
@@ -233,47 +264,53 @@ export const storageService = {
   },
 
   saveCategory: async (categoryData) => {
+    const categories = storageService.getCategories();
+    const targetId = categoryData.id ? String(categoryData.id) : `cat_${Date.now()}`;
+    const slug = categoryData.slug || (categoryData.name || 'category').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    const fullCat = {
+      ...categoryData,
+      id: targetId,
+      slug,
+      shortName: categoryData.shortName || categoryData.name,
+      updated_at: new Date().toISOString()
+    };
+
+    let updated;
+    const existingIndex = categories.findIndex(c => String(c.id) === String(targetId) || c.slug === slug);
+    if (existingIndex >= 0) {
+      updated = [...categories];
+      updated[existingIndex] = { ...categories[existingIndex], ...fullCat };
+    } else {
+      updated = [...categories, fullCat];
+    }
+
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
+    storageService.notifyChange('categories', updated);
+
     if (firebaseService.isConfigured()) {
       try {
-        const saved = await firebaseService.saveCategory(categoryData);
-        return saved;
+        await firebaseService.saveCategory(fullCat);
       } catch (err) {
-        console.warn('Firebase save category failed:', err);
+        console.warn('Firebase saveCategory sync failed:', err);
       }
     }
-    const categories = storageService.getCategories();
-    let updated;
-    if (categoryData.id) {
-      updated = categories.map(c => String(c.id) === String(categoryData.id) ? { ...c, ...categoryData } : c);
-    } else {
-      const newId = categories.length > 0 ? Math.max(...categories.map(c => Number(c.id) || 0)) + 1 : 1;
-      const slug = categoryData.slug || (categoryData.name || 'category').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const newCat = {
-        ...categoryData,
-        id: String(newId),
-        slug,
-        shortName: categoryData.shortName || categoryData.name,
-        productCount: 0
-      };
-      updated = [...categories, newCat];
-    }
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
-    storageService.notifyChange('categories');
     return updated;
   },
 
   deleteCategory: async (id) => {
+    const categories = storageService.getCategories();
+    const filtered = categories.filter(c => String(c.id) !== String(id));
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
+    storageService.notifyChange('categories', filtered);
+
     if (firebaseService.isConfigured()) {
       try {
         await firebaseService.deleteCategory(id);
       } catch (err) {
-        console.warn('Firebase delete category failed:', err);
+        console.warn('Firebase deleteCategory sync failed:', err);
       }
     }
-    const categories = storageService.getCategories();
-    const filtered = categories.filter(c => String(c.id) !== String(id));
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
-    storageService.notifyChange('categories');
     return filtered;
   },
 
@@ -293,19 +330,11 @@ export const storageService = {
   },
 
   addInquiry: async (inquiryData) => {
-    if (firebaseService.isConfigured()) {
-      try {
-        const saved = await firebaseService.addInquiry(inquiryData);
-        return saved;
-      } catch (err) {
-        console.warn('Firebase add inquiry failed:', err);
-      }
-    }
     const inquiries = storageService.getInquiries();
-    const newId = inquiries.length > 0 ? Math.max(...inquiries.map(i => Number(i.id) || 0)) + 1 : 1;
+    const newId = `inq_${Date.now()}`;
     const newInquiry = {
       ...inquiryData,
-      id: String(newId),
+      id: newId,
       company_name: inquiryData.company_name || inquiryData.company || '',
       product_interest: inquiryData.product_interest || inquiryData.product_name || '',
       status: 'new',
@@ -313,37 +342,47 @@ export const storageService = {
     };
     const updated = [newInquiry, ...inquiries];
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
-    storageService.notifyChange('inquiries');
+    storageService.notifyChange('inquiries', updated);
+
+    if (firebaseService.isConfigured()) {
+      try {
+        await firebaseService.addInquiry(newInquiry);
+      } catch (err) {
+        console.warn('Firebase addInquiry sync failed:', err);
+      }
+    }
     return newInquiry;
   },
 
   updateInquiryStatus: async (id, status) => {
+    const inquiries = storageService.getInquiries();
+    const updated = inquiries.map(i => String(i.id) === String(id) ? { ...i, status } : i);
+    localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
+    storageService.notifyChange('inquiries', updated);
+
     if (firebaseService.isConfigured()) {
       try {
         await firebaseService.updateInquiryStatus(id, status);
       } catch (err) {
-        console.warn('Firebase update inquiry status failed:', err);
+        console.warn('Firebase updateInquiryStatus sync failed:', err);
       }
     }
-    const inquiries = storageService.getInquiries();
-    const updated = inquiries.map(i => String(i.id) === String(id) ? { ...i, status } : i);
-    localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
-    storageService.notifyChange('inquiries');
     return updated;
   },
 
   deleteInquiry: async (id) => {
+    const inquiries = storageService.getInquiries();
+    const filtered = inquiries.filter(i => String(i.id) !== String(id));
+    localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(filtered));
+    storageService.notifyChange('inquiries', filtered);
+
     if (firebaseService.isConfigured()) {
       try {
         await firebaseService.deleteInquiry(id);
       } catch (err) {
-        console.warn('Firebase delete inquiry failed:', err);
+        console.warn('Firebase deleteInquiry sync failed:', err);
       }
     }
-    const inquiries = storageService.getInquiries();
-    const filtered = inquiries.filter(i => String(i.id) !== String(id));
-    localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(filtered));
-    storageService.notifyChange('inquiries');
     return filtered;
   },
 
@@ -402,45 +441,19 @@ export const storageService = {
   },
 
   saveSettings: async (settingsData) => {
+    const current = storageService.getSettings();
+    const updated = { ...current, ...settingsData };
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+    storageService.notifyChange('settings', updated);
+
     if (firebaseService.isConfigured()) {
       try {
         await firebaseService.saveSettings(settingsData);
       } catch (err) {
-        console.warn('Firebase save settings failed:', err);
+        console.warn('Firebase saveSettings sync failed:', err);
       }
     }
-    const current = storageService.getSettings();
-    const primaryPhone = settingsData.primary_phone || settingsData.company_phone || current.primary_phone;
-    const secondaryPhone = settingsData.secondary_phone || settingsData.company_phone_2 || current.secondary_phone;
-    const email = settingsData.email || settingsData.company_email || current.email;
-    const address = settingsData.address || settingsData.company_address || current.company_address;
-    const whatsapp = settingsData.whatsapp_number || settingsData.company_whatsapp || settingsData.whatsapp || current.whatsapp;
-    const hours = settingsData.working_hours || settingsData.business_hours || current.working_hours;
-    const companyName = settingsData.company_name || settingsData.name || current.company_name;
-
-    const updated = {
-      ...current,
-      ...settingsData,
-      name: companyName,
-      company_name: companyName,
-      primary_phone: primaryPhone,
-      company_phone: primaryPhone,
-      secondary_phone: secondaryPhone,
-      company_phone_2: secondaryPhone,
-      email: email,
-      company_email: email,
-      address: typeof address === 'object' ? (address.full || address.line1) : address,
-      company_address: typeof address === 'object' ? (address.full || address.line1) : address,
-      whatsapp: whatsapp,
-      whatsapp_number: whatsapp,
-      company_whatsapp: whatsapp,
-      working_hours: hours,
-      business_hours: hours
-    };
-
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
-    storageService.notifyChange('settings');
-    return storageService.getSettings();
+    return updated;
   },
 
   // DASHBOARD STATS

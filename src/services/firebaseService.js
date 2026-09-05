@@ -7,8 +7,6 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  query,
-  orderBy,
   onSnapshot
 } from 'firebase/firestore';
 import {
@@ -29,15 +27,17 @@ export const firebaseService = {
   getProducts: async () => {
     if (!firebaseService.isConfigured()) return null;
     try {
-      const q = query(collection(db, 'products'), orderBy('created_at', 'desc'));
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(collection(db, 'products'));
       if (snapshot.empty) {
-        // Auto-seed initial products to Firestore
         await firebaseService.seedInitialData();
-        const seededSnapshot = await getDocs(q);
-        return seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const seededSnapshot = await getDocs(collection(db, 'products'));
+        const list = seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        list.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+        return list;
       }
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      list.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      return list;
     } catch (err) {
       console.error('Firebase getProducts error:', err);
       return null;
@@ -46,9 +46,9 @@ export const firebaseService = {
 
   subscribeProducts: (callback) => {
     if (!firebaseService.isConfigured()) return () => {};
-    const q = query(collection(db, 'products'), orderBy('created_at', 'desc'));
-    return onSnapshot(q, (snapshot) => {
+    return onSnapshot(collection(db, 'products'), (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       callback(items);
     }, (error) => {
       console.error('Firebase subscribeProducts error:', error);
@@ -58,8 +58,7 @@ export const firebaseService = {
   saveProduct: async (productData) => {
     if (!firebaseService.isConfigured()) return null;
     try {
-      const isEdit = Boolean(productData.id);
-      const docId = isEdit ? String(productData.id) : doc(collection(db, 'products')).id;
+      const docId = String(productData.id || productData.slug || doc(collection(db, 'products')).id);
       
       const slug = productData.slug || (productData.name || 'product')
         .toLowerCase()
@@ -70,22 +69,19 @@ export const firebaseService = {
         ...productData,
         id: docId,
         slug,
+        category_id: Number(productData.category_id || 1),
         category_name: productData.category_name || 'Industrial Components',
         category_slug: productData.category_slug || 'couplings',
         image: productData.image || '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg',
         gallery: productData.gallery && productData.gallery.length > 0 ? productData.gallery : [productData.image || '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg'],
-        features: productData.features || [],
-        specifications: productData.specifications || [],
-        applications: productData.applications || [],
-        available_sizes: productData.available_sizes || [],
-        is_featured: productData.is_featured ?? true,
-        is_published: productData.is_published ?? true,
+        features: Array.isArray(productData.features) ? productData.features : [],
+        short_description: productData.short_description || '',
+        description: productData.description || productData.short_description || '',
+        is_featured: productData.is_featured !== false,
+        is_published: true,
+        created_at: productData.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-
-      if (!isEdit) {
-        payload.created_at = new Date().toISOString();
-      }
 
       await setDoc(doc(db, 'products', docId), payload, { merge: true });
       return payload;
@@ -182,9 +178,10 @@ export const firebaseService = {
   getInquiries: async () => {
     if (!firebaseService.isConfigured()) return null;
     try {
-      const q = query(collection(db, 'inquiries'), orderBy('created_at', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const snapshot = await getDocs(collection(db, 'inquiries'));
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      list.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      return list;
     } catch (err) {
       console.error('Firebase getInquiries error:', err);
       return null;
@@ -193,9 +190,9 @@ export const firebaseService = {
 
   subscribeInquiries: (callback) => {
     if (!firebaseService.isConfigured()) return () => {};
-    const q = query(collection(db, 'inquiries'), orderBy('created_at', 'desc'));
-    return onSnapshot(q, (snapshot) => {
+    return onSnapshot(collection(db, 'inquiries'), (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       callback(items);
     }, (error) => {
       console.error('Firebase subscribeInquiries error:', error);
@@ -251,7 +248,6 @@ export const firebaseService = {
       if (docSnap.exists()) {
         return docSnap.data();
       }
-      // Seed default company info
       await setDoc(doc(db, 'settings', 'general'), COMPANY_INFO);
       return COMPANY_INFO;
     } catch (err) {
@@ -292,7 +288,7 @@ export const firebaseService = {
     if (!firebaseService.isConfigured() || !storage) {
       throw new Error('Firebase Storage not configured');
     }
-    const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const cleanFileName = `${Date.now()}_${(file.name || 'photo.jpg').replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     const storageRef = ref(storage, `${folder}/${cleanFileName}`);
     const uploadResult = await uploadBytes(storageRef, file);
     return await getDownloadURL(uploadResult.ref);
@@ -309,11 +305,11 @@ export const firebaseService = {
         await setDoc(doc(db, 'products', pId), {
           ...p,
           id: pId,
-          created_at: new Date().toISOString()
-        });
+          created_at: p.created_at || new Date().toISOString()
+        }, { merge: true });
       }
       await firebaseService.seedCategories();
-      await setDoc(doc(db, 'settings', 'general'), COMPANY_INFO);
+      await setDoc(doc(db, 'settings', 'general'), COMPANY_INFO, { merge: true });
     } catch (err) {
       console.error('Seeding error:', err);
     }
@@ -328,7 +324,7 @@ export const firebaseService = {
           ...c,
           id: cId,
           created_at: new Date().toISOString()
-        });
+        }, { merge: true });
       }
     } catch (err) {
       console.error('Seeding categories error:', err);

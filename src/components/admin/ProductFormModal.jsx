@@ -20,6 +20,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
   });
 
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -134,7 +135,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -159,8 +160,15 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
       is_featured: Boolean(formData.is_featured)
     };
 
-    onSave(cleanPayload);
-    onClose();
+    try {
+      setSaving(true);
+      await onSave(cleanPayload);
+      onClose();
+    } catch (saveErr) {
+      setError(saveErr.message || 'Failed to save product');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -375,16 +383,18 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition-colors"
+              disabled={saving}
+              className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs shadow-md shadow-orange-600/25 flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
+              disabled={saving || uploading}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs shadow-md shadow-orange-600/25 flex items-center gap-2 cursor-pointer transition-all hover:scale-105 disabled:opacity-50 disabled:pointer-events-none"
             >
-              <Check size={16} />
-              <span>{product ? 'Update Product' : 'Save Product'}</span>
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              <span>{saving ? 'Saving...' : (product ? 'Update Product' : 'Save Product')}</span>
             </button>
           </div>
 
