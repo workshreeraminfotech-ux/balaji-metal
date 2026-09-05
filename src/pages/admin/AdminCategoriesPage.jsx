@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FolderTree, Plus, Edit2, Trash2, 
-  Check, X, Sparkles, Layers, Disc, CircleDot, Settings 
+  Check, X, Sparkles, Layers, Disc, CircleDot, Settings, Package 
 } from 'lucide-react';
 import { storageService } from '@/utils/storageService';
 import SEO from '@/components/ui/SEO';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [editingCategory, setEditingCategory] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', slug: '', shortName: '', description: '' });
 
   const loadData = () => {
     setCategories(storageService.getCategories());
+    setProducts(storageService.getProducts());
   };
 
   useEffect(() => {
     loadData();
+    const unsubscribe = storageService.subscribe((detail) => {
+      if (!detail?.type || detail.type === 'categories' || detail.type === 'products' || detail.type === 'all') {
+        loadData();
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const handleOpenAdd = () => {
@@ -90,46 +98,57 @@ export default function AdminCategoriesPage() {
 
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {categories.map((cat) => (
-          <div key={cat.id} className="bg-white border border-slate-200/90 rounded-3xl p-6 space-y-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
-                  <Layers size={20} />
+        {categories.map((cat) => {
+          const count = products.filter(p => p.category_slug === cat.slug || String(p.category_id) === String(cat.id)).length;
+
+          return (
+            <div key={cat.id} className="bg-white border border-slate-200/90 rounded-3xl p-6 space-y-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
+                    <Layers size={20} />
+                  </div>
+                  <span className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                    <Package size={13} />
+                    <span>{count} {count === 1 ? 'Product' : 'Products'}</span>
+                  </span>
                 </div>
-                <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
-                  slug: {cat.slug}
-                </span>
+
+                <div>
+                  <h3 className="text-lg font-heading font-black text-slate-900">
+                    {cat.name}
+                  </h3>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    slug: {cat.slug}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {cat.description || 'Power transmission products line.'}
+                </p>
               </div>
 
-              <h3 className="text-lg font-heading font-black text-slate-900">
-                {cat.name}
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                {cat.description || 'Power transmission products line.'}
-              </p>
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(cat)}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-orange-50 text-slate-600 hover:text-orange-600 transition-colors cursor-pointer"
+                  title="Edit Category"
+                >
+                  <Edit2 size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(cat.id)}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors cursor-pointer"
+                  title="Delete Category"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
-
-            <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => handleOpenEdit(cat)}
-                className="p-2 rounded-xl bg-slate-100 hover:bg-orange-50 text-slate-600 hover:text-orange-600 transition-colors cursor-pointer"
-                title="Edit Category"
-              >
-                <Edit2 size={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(cat.id)}
-                className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors cursor-pointer"
-                title="Delete Category"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Modal */}
@@ -143,7 +162,7 @@ export default function AdminCategoriesPage() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900"
+                className="p-1.5 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900 cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -188,13 +207,13 @@ export default function AdminCategoriesPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-600/20"
+                  className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-600/20 cursor-pointer"
                 >
                   Save Category
                 </button>

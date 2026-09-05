@@ -148,10 +148,14 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
     const mainCoverPhoto = formData.photos[0] || (product?.image) || defaultPlaceholder;
     const gallery = formData.photos.length > 0 ? formData.photos : [mainCoverPhoto];
 
+    const selectedCat = categories.find(c => String(c.id) === String(formData.category_id) || c.slug === String(formData.category_id)) || categories[0] || {};
+
     const cleanPayload = {
       ...(product ? { id: product.id, slug: product.slug, applications: product.applications, specifications: product.specifications, available_sizes: product.available_sizes, material: product.material } : {}),
       name: formData.name.trim(),
-      category_id: Number(formData.category_id),
+      category_id: selectedCat.id || formData.category_id,
+      category_name: selectedCat.name || selectedCat.shortName || 'Industrial Components',
+      category_slug: selectedCat.slug || 'couplings',
       short_description: formData.short_description.trim() || `${formData.name} manufactured by Balaji Metal.`,
       description: formData.short_description.trim(),
       image: mainCoverPhoto,

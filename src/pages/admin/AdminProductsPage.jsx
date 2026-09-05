@@ -27,6 +27,12 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     loadData();
+    const unsubscribe = storageService.subscribe((detail) => {
+      if (!detail?.type || detail.type === 'products' || detail.type === 'categories' || detail.type === 'all') {
+        loadData();
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const handleOpenAdd = () => {
@@ -52,12 +58,14 @@ export default function AdminProductsPage() {
 
   // Filtered products
   const filteredProducts = products.filter((p) => {
-    const matchesCat = selectedCategory === 'all' || String(p.category_id) === String(selectedCategory) || p.category_slug === selectedCategory;
+    const matchesCat = selectedCategory === 'all' || 
+      String(p.category_id) === String(selectedCategory) || 
+      p.category_slug === selectedCategory;
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch = !q || (
       p.name.toLowerCase().includes(q) ||
-      p.material?.toLowerCase().includes(q) ||
-      p.short_description?.toLowerCase().includes(q)
+      p.short_description?.toLowerCase().includes(q) ||
+      p.category_name?.toLowerCase().includes(q)
     );
     return matchesCat && matchesSearch;
   });
@@ -174,7 +182,7 @@ export default function AdminProductsPage() {
                       {/* Category */}
                       <td className="py-4 px-4">
                         <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200 text-[11px] font-bold">
-                          {product.category_name}
+                          {product.category_name || categories.find(c => String(c.id) === String(product.category_id) || c.slug === product.category_slug)?.name || 'General'}
                         </span>
                       </td>
 

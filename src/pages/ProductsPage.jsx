@@ -245,13 +245,13 @@ export default function ProductsPage() {
 
             {categories.map((cat) => {
               const Icon = getCategoryIcon(cat.slug);
-              const isSelected = activeCategory === cat.slug;
+              const isSelected = activeCategory === cat.slug || String(activeCategory) === String(cat.id);
               const count = products.filter(p => p.category_slug === cat.slug || String(p.category_id) === String(cat.id)).length;
 
               return (
                 <button
                   key={cat.id}
-                  onClick={() => handleCategorySelect(cat.slug)}
+                  onClick={() => handleCategorySelect(cat.slug || String(cat.id))}
                   className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-2 ${
                     isSelected
                       ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md shadow-orange-500/25'
