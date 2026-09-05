@@ -80,8 +80,8 @@ const FeaturedProducts = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Scroll Navigation Arrow Buttons */}
+          {/* Desktop Only: Navigation Arrows & All Products Button */}
+          <div className="hidden sm:flex items-center gap-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -103,8 +103,7 @@ const FeaturedProducts = () => {
               </button>
             </div>
 
-            {/* Desktop Only: Prominent All Products Button */}
-            <Link to="/products" className="hidden sm:inline-flex shrink-0">
+            <Link to="/products" className="inline-flex shrink-0">
               <button 
                 type="button"
                 className="bg-slate-900 hover:bg-orange-600 text-white font-bold px-5 py-3 rounded-2xl text-sm flex items-center gap-2.5 shadow-md shadow-slate-900/20 hover:shadow-orange-600/30 transition-all cursor-pointer hover:scale-105"
@@ -139,15 +138,38 @@ const FeaturedProducts = () => {
           ))}
         </div>
 
-        {/* Mobile Only: "All Products (5)" Button placed at the very bottom under products */}
-        <div className="mt-8 block sm:hidden">
-          <Link to="/products" className="block w-full">
+        {/* Mobile Only: Bottom Controls with Arrows & All Products Button */}
+        <div className="mt-4 sm:hidden flex items-center gap-3">
+          {/* Scroll Navigation Arrow Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => scroll('left')}
+              className="w-12 h-12 rounded-2xl bg-white active:bg-orange-600 text-slate-700 active:text-white border border-slate-200 shadow-sm flex items-center justify-center transition-all cursor-pointer active:scale-95"
+              title="Previous Product"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <button
+              type="button"
+              onClick={() => scroll('right')}
+              className="w-12 h-12 rounded-2xl bg-white active:bg-orange-600 text-slate-700 active:text-white border border-slate-200 shadow-sm flex items-center justify-center transition-all cursor-pointer active:scale-95"
+              title="Next Product"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={22} />
+            </button>
+          </div>
+
+          {/* All Products Button */}
+          <Link to="/products" className="flex-1 min-w-0">
             <button 
               type="button"
-              className="w-full bg-slate-900 hover:bg-orange-600 text-white font-bold py-3.5 px-6 rounded-2xl text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-slate-900/20 active:scale-98 transition-all cursor-pointer"
+              className="w-full h-12 bg-slate-900 active:bg-orange-600 text-white font-bold px-4 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-md shadow-slate-900/20 active:scale-98 transition-all cursor-pointer"
             >
-              <span>All Products ({products.length})</span>
-              <ArrowRight size={16} className="text-amber-400" />
+              <span className="truncate">All Products ({products.length})</span>
+              <ArrowRight size={16} className="text-amber-400 shrink-0" />
             </button>
           </Link>
         </div>
