@@ -5,7 +5,6 @@ import { Menu, X, Phone, Mail, MapPin, Sparkles } from 'lucide-react';
 import { cn } from '@/utils/helpers';
 import Button from '@/components/ui/Button';
 import { COMPANY_INFO } from '@/data/companyData';
-import { CATEGORIES } from '@/data/productsData';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -67,10 +66,10 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Top Announcement Bar - Visible on Mobile & Desktop */}
+      {/* Top Announcement Bar - Visible on Desktop only (hidden on mobile) */}
       <div 
         className={cn(
-          "bg-slate-900 text-slate-200 text-[11px] sm:text-xs py-2 px-3.5 sm:px-6 fixed top-0 left-0 right-0 z-40 border-b border-slate-800 transition-all duration-300",
+          "hidden md:block bg-slate-900 text-slate-200 text-xs py-2 px-6 fixed top-0 left-0 right-0 z-40 border-b border-slate-800 transition-all duration-300",
           isScrolled ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
         )}
       >
@@ -84,7 +83,7 @@ export default function Navbar() {
           </div>
 
           {/* Contact Details */}
-          <div className="flex items-center gap-3 sm:gap-6 shrink-0">
+          <div className="flex items-center gap-6 shrink-0">
             <a 
               href={`tel:${COMPANY_INFO.phones[0].raw}`}
               className="flex items-center gap-1.5 text-slate-200 hover:text-amber-400 transition-colors"
@@ -94,7 +93,7 @@ export default function Navbar() {
             </a>
             <a 
               href={`mailto:${COMPANY_INFO.email}`} 
-              className="hidden sm:flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold transition-colors"
+              className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold transition-colors"
             >
               <Mail size={12} className="text-amber-400 shrink-0" />
               <span>{COMPANY_INFO.email}</span>
@@ -109,7 +108,7 @@ export default function Navbar() {
           'fixed z-30 w-full transition-all duration-300',
           isScrolled
             ? 'top-0 bg-white/95 backdrop-blur-md shadow-md shadow-slate-200/50 border-b border-slate-200/80 py-2.5 sm:py-3'
-            : 'top-[33px] bg-white/95 backdrop-blur-md border-b border-slate-100 py-3 sm:py-4'
+            : 'top-0 md:top-[33px] bg-white/95 backdrop-blur-md border-b border-slate-100 py-3 sm:py-4'
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -174,15 +173,8 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Mobile Action Buttons */}
-            <div className="flex items-center gap-2 md:hidden">
-              <a
-                href={`tel:${COMPANY_INFO.phones[0].raw}`}
-                className="p-2.5 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 active:scale-95 transition-all"
-                aria-label="Call Us"
-              >
-                <Phone size={18} />
-              </a>
+            {/* Mobile Action Buttons (Drawer Hamburger only) */}
+            <div className="flex items-center md:hidden">
               <button
                 type="button"
                 className="text-slate-800 hover:text-slate-900 p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 focus:outline-none active:scale-95 transition-all"
@@ -196,7 +188,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Drawer (Rendered outside header at root level with high z-index) */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-[9999] md:hidden">
@@ -216,7 +208,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 bottom-0 w-[85%] max-w-[340px] bg-white border-l border-slate-200 shadow-2xl flex flex-col z-[10000] overflow-y-auto"
+              className="fixed right-0 top-0 bottom-0 w-[80%] max-w-[320px] bg-white border-l border-slate-200 shadow-2xl flex flex-col z-[10000] overflow-y-auto"
             >
               {/* Drawer Top Header */}
               <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10">
@@ -244,73 +236,29 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Navigation Links */}
-              <div className="p-5 flex-1 flex flex-col justify-between gap-6">
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold px-1 mb-2">Navigation</p>
-                    <ul className="flex flex-col gap-1.5">
-                      {navLinks.map((link) => (
-                        <li key={link.name}>
-                          <NavLink
-                            to={link.path}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={({ isActive }) =>
-                              cn(
-                                'block text-sm font-semibold py-2.5 px-3.5 rounded-xl transition-colors',
-                                isActive 
-                                  ? 'bg-orange-50 text-orange-600 border border-orange-200 font-bold' 
-                                  : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-                              )
-                            }
-                          >
-                            {link.name}
-                          </NavLink>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Categories Quick Links */}
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold px-1 mb-2">Product Categories</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {CATEGORIES.map(cat => (
-                        <Link
-                          key={cat.id}
-                          to={`/products?category=${cat.slug}`}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:text-orange-600 hover:border-orange-300 transition-colors"
-                        >
-                          {cat.shortName}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Section in Drawer */}
-                <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-                  <a 
-                    href={`tel:${COMPANY_INFO.phones[0].raw}`}
-                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 active:scale-98 transition-all"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-                      <Phone size={17} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Direct Call</p>
-                      <p className="text-xs font-bold text-slate-900 truncate">{COMPANY_INFO.phones[0].display}</p>
-                    </div>
-                  </a>
-
-                  <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3 rounded-xl shadow-md flex items-center justify-center gap-2">
-                      <Sparkles size={16} />
-                      Request Quotation
-                    </Button>
-                  </Link>
-                </div>
+              {/* Navigation Links Only */}
+              <div className="p-5 flex-1 flex flex-col">
+                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold px-1 mb-3">Navigation</p>
+                <ul className="flex flex-col gap-2">
+                  {navLinks.map((link) => (
+                    <li key={link.name}>
+                      <NavLink
+                        to={link.path}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={({ isActive }) =>
+                          cn(
+                            'block text-base font-semibold py-3 px-4 rounded-xl transition-colors',
+                            isActive 
+                              ? 'bg-orange-50 text-orange-600 border border-orange-200 font-bold shadow-xs' 
+                              : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                          )
+                        }
+                      >
+                        {link.name}
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </motion.div>
           </div>
