@@ -13,16 +13,24 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogoClick = () => {
-    // Smooth scroll to top Hero section if already on home page
+  const handleLogoClick = (e) => {
+    setIsMobileMenuOpen(false);
     if (location.pathname === '/') {
+      e?.preventDefault?.();
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     }
   };
 
   const handleNavLinkClick = (path) => {
+    setIsMobileMenuOpen(false);
     if (path === '/' && location.pathname === '/') {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
     }
   };
 
@@ -192,15 +200,21 @@ export default function Navbar() {
                 transition={{ type: 'spring', damping: 25, stiffness: 220 }}
                 className="fixed right-0 top-0 bottom-0 w-4/5 max-w-sm bg-white border-l border-slate-200 z-50 p-6 flex flex-col md:hidden overflow-y-auto shadow-2xl"
               >
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center font-heading font-black text-sm text-white">
-                      BM
+                <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+                  <Link 
+                    to="/" 
+                    onClick={handleLogoClick}
+                    className="flex items-center gap-2.5 focus:outline-none"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-0.5 shadow-md">
+                      <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center font-heading font-black text-lg text-amber-400">
+                        BM
+                      </div>
                     </div>
                     <span className="font-heading text-lg font-black text-slate-900">
                       BALAJI <span className="text-orange-600">METAL</span>
                     </span>
-                  </div>
+                  </Link>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 border border-slate-200"
