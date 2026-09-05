@@ -202,15 +202,15 @@ export default function ContactPage() {
                   name="subject" 
                   value={formData.subject} 
                   onChange={handleChange}
-                  className="bg-slate-50 border-slate-300 text-slate-900 rounded-xl py-3 focus:border-orange-500 text-sm font-semibold"
+                  className="bg-slate-50 border-slate-300 text-slate-900 rounded-xl py-3 focus:border-orange-500 text-sm font-semibold focus:bg-white"
                 >
-                  <option value="Request Quotation">Request Quotation (Price & Availability)</option>
-                  <option value="Pin Bush Coupling Inquiry">Pin Bush Coupling Inquiry</option>
-                  <option value="Star Spider Coupling Inquiry">Star Spider Coupling Inquiry</option>
-                  <option value="V-Belt Pulley Sizing & Supply">V-Belt Pulley Sizing & Supply</option>
-                  <option value="Hand Wheel Inquiry">Hand Wheel Inquiry</option>
-                  <option value="Custom Castings & Drawing Match">Custom Castings & Drawing Match</option>
-                  <option value="Other">Other Query</option>
+                  <option value="Request Quotation" className="text-slate-900 bg-white">Request Quotation (Price & Availability)</option>
+                  <option value="Pin Bush Coupling Inquiry" className="text-slate-900 bg-white">Pin Bush Coupling Inquiry</option>
+                  <option value="Star Spider Coupling Inquiry" className="text-slate-900 bg-white">Star Spider Coupling Inquiry</option>
+                  <option value="V-Belt Pulley Sizing & Supply" className="text-slate-900 bg-white">V-Belt Pulley Sizing & Supply</option>
+                  <option value="Hand Wheel Inquiry" className="text-slate-900 bg-white">Hand Wheel Inquiry</option>
+                  <option value="Custom Castings & Drawing Match" className="text-slate-900 bg-white">Custom Castings & Drawing Match</option>
+                  <option value="Other" className="text-slate-900 bg-white">Other Query</option>
                 </Input>
               </div>
 
