@@ -32,8 +32,16 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
   
-  // Scroll Ref for products container
+  // Scroll Ref for products & categories
   const productsScrollRef = useRef(null);
+  const categoryScrollRef = useRef(null);
+
+  const scrollCategories = (direction) => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -220 : 220;
+      categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   const scrollProducts = (direction) => {
     if (productsScrollRef.current) {
