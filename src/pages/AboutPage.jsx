@@ -96,6 +96,15 @@ export default function AboutPage() {
               From Foundry Craftsmanship to Heavy Engineering Precision
             </h2>
 
+            {/* Mobile Only: Facility Photo directly after heading */}
+            <div className="block lg:hidden my-4 relative rounded-2xl overflow-hidden border border-slate-200 shadow-lg bg-slate-100">
+              <img 
+                src="/images/facility/factory-facility.jpg" 
+                alt="Balaji Metal Precision Workshop" 
+                className="w-full h-[240px] sm:h-[320px] object-cover"
+              />
+            </div>
+
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
               Established in <strong className="text-slate-900">Kotda Sangani / Veraval Industrial Zone, Rajkot</strong>, Balaji Metal has evolved from a specialized foundry into one of Western India's premier manufacturers of industrial power transmission components.
             </p>
@@ -120,9 +129,9 @@ export default function AboutPage() {
             </div>
           </motion.div>
 
-          {/* Right Photo */}
+          {/* Desktop Right Photo */}
           <motion.div 
-            className="lg:col-span-6"
+            className="hidden lg:block lg:col-span-6"
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-60px" }}

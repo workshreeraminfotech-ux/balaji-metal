@@ -175,17 +175,18 @@ export default function ProductsPage() {
         </div>
       </section>
 
+      {/* Sticky Filter & Search Toolbar */}
       <motion.div 
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20"
-        initial={{ opacity: 0, y: 25 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.5, delay: 0.15 }}
+        className="sticky top-14 sm:top-16 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
-        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-xl shadow-slate-300/40 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div className="relative w-full sm:flex-1">
-              <input 
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 space-y-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Search Box */}
+            <div className="relative flex-1 w-full">
+              <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
@@ -204,7 +205,8 @@ export default function ProductsPage() {
               )}
             </div>
 
-            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 shrink-0 self-end sm:self-auto">
+            {/* Desktop Only View Mode Toggle (Hidden on Mobile) */}
+            <div className="hidden sm:flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 shrink-0 self-end sm:self-auto">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -230,39 +232,68 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-slate-100 scrollbar-none">
+          {/* Category Bar with Left/Right Scroll Buttons */}
+          <div className="relative flex items-center pt-2 border-t border-slate-100">
+            {/* Scroll Left Button */}
             <button
-              onClick={() => handleCategorySelect('all')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-2 ${
-                activeCategory === 'all'
-                  ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md shadow-orange-500/25'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200/80'
-              }`}
+              type="button"
+              onClick={() => scrollCategories('left')}
+              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-orange-600 hover:bg-orange-50 shadow-xs mr-2 shrink-0 active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+              aria-label="Scroll categories left"
+              title="Previous categories"
             >
-              <Sparkles size={14} />
-              <span>All Products ({products.length})</span>
+              <ChevronLeft size={16} />
             </button>
 
-            {categories.map((cat) => {
-              const Icon = getCategoryIcon(cat.slug);
-              const isSelected = activeCategory === cat.slug || String(activeCategory) === String(cat.id);
-              const count = products.filter(p => p.category_slug === cat.slug || String(p.category_id) === String(cat.id)).length;
+            {/* Scrollable Categories List */}
+            <div 
+              ref={categoryScrollRef}
+              className="flex items-center gap-2 overflow-x-auto scrollbar-none scroll-smooth flex-1 py-1"
+            >
+              <button
+                onClick={() => handleCategorySelect('all')}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-2 shrink-0 ${
+                  activeCategory === 'all'
+                    ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md shadow-orange-500/25'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200/80'
+                }`}
+              >
+                <Sparkles size={14} />
+                <span>All Products ({products.length})</span>
+              </button>
 
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategorySelect(cat.slug || String(cat.id))}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-2 ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md shadow-orange-500/25'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200/80'
-                  }`}
-                >
-                  <Icon size={14} />
-                  <span>{cat.shortName || cat.name} ({count})</span>
-                </button>
-              );
-            })}
+              {categories.map((cat) => {
+                const Icon = getCategoryIcon(cat.slug);
+                const isSelected = activeCategory === cat.slug || String(activeCategory) === String(cat.id);
+                const count = products.filter(p => p.category_slug === cat.slug || String(p.category_id) === String(cat.id)).length;
+
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategorySelect(cat.slug || String(cat.id))}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-2 shrink-0 ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md shadow-orange-500/25'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200/80'
+                    }`}
+                  >
+                    <Icon size={14} />
+                    <span>{cat.shortName || cat.name} ({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Scroll Right Button */}
+            <button
+              type="button"
+              onClick={() => scrollCategories('right')}
+              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-orange-600 hover:bg-orange-50 shadow-xs ml-2 shrink-0 active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+              aria-label="Scroll categories right"
+              title="Next categories"
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
       </motion.div>
