@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, HelpCircle, PhoneCall } from 'lucide-react';
-import { COMPANY_INFO } from '@/data/companyData';
-import { useSettings } from '@/hooks/useSettings';
+import { ChevronDown, HelpCircle } from 'lucide-react';
 
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(0);
-  const { settings } = useSettings();
-  const phoneDisplay = settings.primary_phone || settings.phones?.[0]?.display || '+91-76000 60193';
-  const phoneRaw = settings.phones?.[0]?.raw || phoneDisplay.replace(/[^0-9+]/g, '');
 
   const faqs = [
     {
@@ -38,48 +33,52 @@ const FAQ = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="text-center mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold">
-            <HelpCircle size={14} className="text-orange-600" />
-            <span>Frequently Asked Questions</span>
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-600 text-xs font-bold uppercase tracking-wider mb-3">
+            <HelpCircle size={14} />
+            <span>Got Questions?</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-slate-900 tracking-tight">
-            Technical & Purchasing FAQs
+          <h2 className="text-3xl sm:text-4xl font-heading font-black tracking-tight text-slate-900">
+            Frequently Asked <span className="text-orange-600">Questions</span>
           </h2>
-          <p className="text-slate-600 text-base">
-            Everything you need to know about our metallurgy, tolerances, sizing, and order fulfillment.
+          <p className="text-sm sm:text-base text-slate-600 mt-3 font-normal">
+            Common technical and procurement queries regarding our castings, tolerances, and supply.
           </p>
         </div>
 
-        {/* FAQ Accordion - Clean White */}
-        <div className="space-y-4">
-          {faqs.map((faq, idx) => {
-            const isOpen = openIndex === idx;
+        {/* Accordion List */}
+        <div className="space-y-3.5">
+          {faqs.map((faq, index) => {
+            const isOpen = openIndex === index;
             return (
-              <div
-                key={idx}
-                className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs transition-colors"
+              <div 
+                key={faq.question}
+                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                  isOpen 
+                    ? 'bg-white border-orange-300 shadow-md shadow-orange-500/5' 
+                    : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-2xs'
+                }`}
               >
                 <button
                   type="button"
-                  onClick={() => setOpenIndex(isOpen ? -1 : idx)}
-                  className="w-full p-6 text-left flex justify-between items-center gap-4 focus:outline-none cursor-pointer"
+                  onClick={() => setOpenIndex(isOpen ? -1 : index)}
+                  className="w-full py-4.5 px-5 sm:px-6 text-left flex items-center justify-between gap-4 font-heading font-bold text-slate-900 text-base sm:text-lg cursor-pointer"
                 >
-                  <span className="font-heading font-bold text-base sm:text-lg text-slate-900">
-                    {faq.question}
-                  </span>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  <span className={isOpen ? 'text-orange-600 font-extrabold' : ''}>{faq.question}</span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 ${
+                    isOpen ? 'bg-orange-100 text-orange-600 rotate-180' : 'bg-slate-100 text-slate-500'
+                  }`}>
                     <ChevronDown size={18} />
                   </div>
                 </button>
-
                 <AnimatePresence>
                   {isOpen && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
                     >
                       <div className="px-6 pb-6 text-slate-600 text-sm sm:text-base leading-relaxed border-t border-slate-100 pt-4 font-medium">
                         {faq.answer}
@@ -90,21 +89,6 @@ const FAQ = () => {
               </div>
             );
           })}
-        </div>
-
-        {/* Quick Help Box */}
-        <div className="mt-12 p-6 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-xs">
-          <div>
-            <h4 className="text-base font-bold text-slate-900">Have a customized drawing or tender requirement?</h4>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Speak directly with our technical engineering team for instant advice.</p>
-          </div>
-          <a
-            href={`tel:${phoneRaw}`}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-500/20 whitespace-nowrap cursor-pointer"
-          >
-            <PhoneCall size={14} />
-            <span>Call {phoneDisplay}</span>
-          </a>
         </div>
 
       </div>

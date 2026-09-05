@@ -65,7 +65,7 @@ const HeroSection = () => {
             className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-900/80 border border-orange-500/50 text-orange-400 text-xs sm:text-sm font-bold shadow-lg backdrop-blur-md"
           >
             <Award size={16} className="text-orange-400 shrink-0" />
-            <span>ISO 9001:2015 Certified | 25+ Years of Foundry & Machining Excellence</span>
+            <span>ISO 9001:2015 Certified</span>
           </motion.div>
 
           {/* Main Headline */}
