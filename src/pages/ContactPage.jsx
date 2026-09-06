@@ -296,17 +296,6 @@ export default function ContactPage() {
                     </p>
                   </div>
                 </div>
-
-                {/* Hours */}
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shrink-0">
-                    <Clock size={18} />
-                  </div>
-                  <div>
-                    <span className="block text-[10px] text-slate-500 uppercase font-bold">Business Hours</span>
-                    <p className="text-slate-700 text-xs mt-0.5 font-medium">{settings.working_hours || settings.business_hours || 'Mon - Sat: 9:00 AM - 7:00 PM (Sunday: Closed)'}</p>
-                  </div>
-                </div>
               </div>
             </div>
 

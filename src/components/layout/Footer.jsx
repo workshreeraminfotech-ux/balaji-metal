@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Clock, ExternalLink, ArrowRight, Lock } from 'lucide-react';
+import { MapPin, Phone, Mail, ExternalLink, ArrowRight, Lock } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 
 export default function Footer() {
@@ -12,7 +12,6 @@ export default function Footer() {
   const secondaryPhone = settings.secondary_phone || settings.phones?.[1]?.display || '+91 92655 39537';
   const secondaryPhoneRaw = settings.phones?.[1]?.raw || secondaryPhone.replace(/[^0-9+]/g, '');
   const email = settings.email || settings.company_email || 'Balajimetal5302@gmail.com';
-  const hours = settings.working_hours || settings.business_hours || 'Mon - Sat: 9:00 AM - 7:00 PM (Sunday: Closed)';
 
   return (
     <footer className="bg-slate-950 text-slate-300 pt-14 pb-8 border-t border-slate-800/80 relative overflow-hidden">
@@ -101,10 +100,6 @@ export default function Footer() {
                 >
                   {email}
                 </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Clock className="h-4 w-4 text-amber-400 shrink-0" />
-                <span className="text-slate-400 text-xs">{hours}</span>
               </li>
             </ul>
           </div>
