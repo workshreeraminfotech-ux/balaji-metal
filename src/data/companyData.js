@@ -6,10 +6,10 @@ export const COMPANY_INFO = {
   establishedYear: 1999,
   experienceYears: "25+",
   phones: [
-    { display: "+91-76000 60193", raw: "+917600060193", isPrimary: true, isWhatsApp: true },
-    { display: "+91-70960 70727", raw: "+917096070727", isPrimary: false, isWhatsApp: false }
+    { display: "+91 70960 70727", raw: "+917096070727", isPrimary: true, isWhatsApp: true },
+    { display: "+91 92655 39537", raw: "+919265539537", isPrimary: false, isWhatsApp: false }
   ],
-  whatsapp: "+917600060193",
+  whatsapp: "+917096070727",
   email: "Balajimetal5302@gmail.com",
   address: {
     line1: "Balaji Metal, P. 43/44, Main Road",

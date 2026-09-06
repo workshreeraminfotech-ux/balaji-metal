@@ -9,7 +9,7 @@ import { useSettings } from '@/hooks/useSettings';
 
 export default function AboutPage() {
   const { settings } = useSettings();
-  const phoneDisplay = settings.primary_phone || settings.phones?.[0]?.display || '+91-76000 60193';
+  const phoneDisplay = settings.primary_phone || settings.phones?.[0]?.display || '+91 70960 70727';
   const phoneRaw = settings.phones?.[0]?.raw || phoneDisplay.replace(/[^0-9+]/g, '');
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 overflow-hidden">

@@ -262,11 +262,11 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <span className="block text-[10px] text-slate-500 uppercase font-bold">Direct Hotline</span>
-                    <a href={`tel:${settings.phones?.[0]?.raw || settings.primary_phone || '+917600060193'}`} className="text-slate-900 font-bold hover:text-orange-600 transition-colors block">
-                      {settings.primary_phone || settings.phones?.[0]?.display || '+91-76000 60193'}
+                    <a href={`tel:${settings.phones?.[0]?.raw || settings.primary_phone || '+917096070727'}`} className="text-slate-900 font-bold hover:text-orange-600 transition-colors block">
+                      {settings.primary_phone || settings.phones?.[0]?.display || '+91 70960 70727'}
                     </a>
-                    <a href={`tel:${settings.phones?.[1]?.raw || settings.secondary_phone || '+917096070727'}`} className="text-slate-600 hover:text-orange-600 transition-colors block text-xs mt-0.5 font-medium">
-                      {settings.secondary_phone || settings.phones?.[1]?.display || '+91-70960 70727'}
+                    <a href={`tel:${settings.phones?.[1]?.raw || settings.secondary_phone || '+919265539537'}`} className="text-slate-600 hover:text-orange-600 transition-colors block text-xs mt-0.5 font-medium">
+                      {settings.secondary_phone || settings.phones?.[1]?.display || '+91 92655 39537'}
                     </a>
                   </div>
                 </div>

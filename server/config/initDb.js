@@ -162,11 +162,11 @@ async function initDatabase() {
     const defaultSettings = {
       company_name: 'Balaji Metal',
       company_tagline: 'Precision Engineering Solutions',
-      company_phone: '+91-76000 60193',
-      company_phone_2: '+91-70960 70727',
+      company_phone: '+91 70960 70727',
+      secondary_phone: '+91 92655 39537',
       company_email: 'Balajimetal5302@gmail.com',
-      company_address: 'Survey No., Balaji Metal, P. 43/44, Main Road, Ta. Kotda Sangani, Veraval, Padavala, Gujarat - 360025',
-      company_whatsapp: '+917600060193',
+      company_address: 'Balaji Metal, P. 43/44, Main Road, Ta. Kotda Sangani, Veraval (Shapar - Padavala Industrial Zone), Rajkot, Gujarat - 360025',
+      company_whatsapp: '+917096070727',
       google_maps_embed: 'https://www.google.com/maps?q=Survey+No.%2C+Balaji+Metal%2C+P.+43%2F44%2C+Main+Road%2C+Ta.+Kotda+Sangani%2C+Veraval%2C+Padavala%2C+Gujarat+360025&output=embed',
       business_hours: 'Mon-Sat: 9:00 AM - 7:00 PM'
     };

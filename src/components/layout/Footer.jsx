@@ -2,17 +2,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Clock, ExternalLink, ArrowRight, Lock } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
-import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const { settings } = useSettings();
 
-  const primaryPhone = settings.primary_phone || settings.phones?.[0]?.display || '+91-76000 60193';
+  const primaryPhone = settings.primary_phone || settings.phones?.[0]?.display || '+91 70960 70727';
   const primaryPhoneRaw = settings.phones?.[0]?.raw || primaryPhone.replace(/[^0-9+]/g, '');
-  const secondaryPhone = settings.secondary_phone || settings.phones?.[1]?.display || '+91-70960 70727';
+  const secondaryPhone = settings.secondary_phone || settings.phones?.[1]?.display || '+91 92655 39537';
   const secondaryPhoneRaw = settings.phones?.[1]?.raw || secondaryPhone.replace(/[^0-9+]/g, '');
-  const waNumber = (settings.whatsapp_number || settings.company_whatsapp || settings.whatsapp || '917600060193').replace('+', '');
   const email = settings.email || settings.company_email || 'Balajimetal5302@gmail.com';
   const hours = settings.working_hours || settings.business_hours || 'Mon - Sat: 9:00 AM - 7:00 PM (Sunday: Closed)';
 
@@ -102,17 +100,6 @@ export default function Footer() {
                   className="text-slate-300 text-xs hover:text-amber-400 transition-colors break-all"
                 >
                   {email}
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <WhatsAppIcon size={16} fill="#25D366" />
-                <a 
-                  href={`https://wa.me/${waNumber}?text=Hello%20Balaji%20Metal,%20I%20am%20contacting%20you%20via%20your%20website.`}
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="text-[#25D366] hover:underline text-xs font-bold transition-colors"
-                >
-                  WhatsApp: {primaryPhone} (Instant RFQ)
                 </a>
               </li>
               <li className="flex items-center gap-3">
