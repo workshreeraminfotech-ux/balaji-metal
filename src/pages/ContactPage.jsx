@@ -230,12 +230,12 @@ export default function ContactPage() {
 
               <Button 
                 variant="primary" 
-                size="lg" 
+                size="default" 
                 type="submit" 
                 loading={loading} 
-                className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3.5 rounded-xl shadow-md border-0 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-2.5 sm:py-3.5 px-4 sm:px-6 text-sm sm:text-base rounded-xl shadow-md border-0 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Send size={16} />
+                <Send size={15} className="sm:w-4 sm:h-4" />
                 <span>Submit Quotation Request</span>
               </Button>
             </form>
