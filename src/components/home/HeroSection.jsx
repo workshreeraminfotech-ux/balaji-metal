@@ -94,11 +94,11 @@ const HeroSection = () => {
           >
             <Link to="/products" className="inline-block w-full sm:w-auto">
               <Button 
-                size="lg" 
-                className="w-full sm:w-auto bg-orange-600 hover:bg-orange-500 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-orange-600/20 border-0 flex items-center justify-center gap-2.5 group text-base cursor-pointer hover:scale-[1.02] transition-all duration-200"
+                size="default" 
+                className="w-full sm:w-auto bg-orange-600 hover:bg-orange-500 text-white font-bold px-5 py-2.5 sm:px-8 sm:py-3.5 rounded-xl shadow-lg shadow-orange-600/20 border-0 flex items-center justify-center gap-2 group text-sm sm:text-base cursor-pointer hover:scale-[1.02] transition-all duration-200"
               >
                 <span>Explore Product Catalog</span>
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px] group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </motion.div>
