@@ -402,17 +402,15 @@ export const storageService = {
       if (stored) {
         return JSON.parse(stored);
       }
-      localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(SAMPLE_INQUIRIES));
-      return SAMPLE_INQUIRIES;
+      return [];
     } catch (e) {
       console.error('Storage getInquiries error:', e);
-      return SAMPLE_INQUIRIES;
+      return [];
     }
   },
 
   addInquiry: async (inquiryData) => {
-    const inquiries = storageService.getInquiries();
-    const newId = `inq_${Date.now()}`;
+    const newId = inquiryData.id || `inq_${Date.now()}`;
     const newInquiry = {
       ...inquiryData,
       id: newId,
@@ -421,49 +419,37 @@ export const storageService = {
       status: 'new',
       created_at: new Date().toISOString()
     };
-    const updated = [newInquiry, ...inquiries];
-    localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
-    storageService.notifyChange('inquiries', updated);
 
     if (firebaseService.isConfigured()) {
-      try {
-        await firebaseService.addInquiry(newInquiry);
-      } catch (err) {
-        console.warn('Firebase addInquiry sync failed:', err);
-      }
+      await firebaseService.addInquiry(newInquiry);
     }
+
+    const inquiries = storageService.getInquiries();
+    const updated = [newInquiry, ...inquiries.filter(i => String(i.id) !== String(newId))];
+    localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
+    storageService.notifyChange('inquiries', updated);
     return newInquiry;
   },
 
   updateInquiryStatus: async (id, status) => {
+    if (firebaseService.isConfigured()) {
+      await firebaseService.updateInquiryStatus(id, status);
+    }
     const inquiries = storageService.getInquiries();
-    const updated = inquiries.map(i => String(i.id) === String(id) ? { ...i, status } : i);
+    const updated = inquiries.map(i => String(i.id) === String(id) ? { ...i, status, updated_at: new Date().toISOString() } : i);
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(updated));
     storageService.notifyChange('inquiries', updated);
-
-    if (firebaseService.isConfigured()) {
-      try {
-        await firebaseService.updateInquiryStatus(id, status);
-      } catch (err) {
-        console.warn('Firebase updateInquiryStatus sync failed:', err);
-      }
-    }
     return updated;
   },
 
   deleteInquiry: async (id) => {
+    if (firebaseService.isConfigured()) {
+      await firebaseService.deleteInquiry(id);
+    }
     const inquiries = storageService.getInquiries();
     const filtered = inquiries.filter(i => String(i.id) !== String(id));
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(filtered));
     storageService.notifyChange('inquiries', filtered);
-
-    if (firebaseService.isConfigured()) {
-      try {
-        await firebaseService.deleteInquiry(id);
-      } catch (err) {
-        console.warn('Firebase deleteInquiry sync failed:', err);
-      }
-    }
     return filtered;
   },
 

@@ -21,20 +21,28 @@ export default function AdminInquiriesPage() {
 
   useEffect(() => {
     loadData();
+    const unsubscribe = storageService.subscribe((detail) => {
+      if (!detail?.type || detail.type === 'inquiries' || detail.type === 'all') {
+        loadData();
+      }
+    });
+    return unsubscribe;
   }, []);
 
-  const handleStatusChange = (id, newStatus) => {
-    storageService.updateInquiryStatus(id, newStatus);
+  const handleStatusChange = async (id, newStatus) => {
+    await storageService.updateInquiryStatus(id, newStatus);
     loadData();
-    if (selectedInquiry && selectedInquiry.id === id) {
+    if (selectedInquiry && String(selectedInquiry.id) === String(id)) {
       setSelectedInquiry({ ...selectedInquiry, status: newStatus });
     }
   };
 
-  const handleDeleteInquiry = (id) => {
-    storageService.deleteInquiry(id);
-    setSelectedInquiry(null);
-    loadData();
+  const handleDeleteInquiry = async (id) => {
+    if (window.confirm('Are you sure you want to delete this customer inquiry? It will be removed permanently from Firebase.')) {
+      await storageService.deleteInquiry(id);
+      setSelectedInquiry(null);
+      loadData();
+    }
   };
 
   const handleExportCSV = () => {

@@ -26,21 +26,27 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     loadData();
+    const unsubscribe = storageService.subscribe((detail) => {
+      if (!detail?.type || detail.type === 'inquiries' || detail.type === 'products' || detail.type === 'categories' || detail.type === 'all') {
+        loadData();
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const newInquiries = inquiries.filter(i => i.status === 'new');
   const recentInquiries = inquiries.slice(0, 5);
 
-  const handleStatusChange = (id, newStatus) => {
-    storageService.updateInquiryStatus(id, newStatus);
+  const handleStatusChange = async (id, newStatus) => {
+    await storageService.updateInquiryStatus(id, newStatus);
     loadData();
-    if (selectedInquiry && selectedInquiry.id === id) {
+    if (selectedInquiry && String(selectedInquiry.id) === String(id)) {
       setSelectedInquiry({ ...selectedInquiry, status: newStatus });
     }
   };
 
-  const handleSaveProduct = (productData) => {
-    storageService.saveProduct(productData);
+  const handleSaveProduct = async (productData) => {
+    await storageService.saveProduct(productData);
     loadData();
   };
 

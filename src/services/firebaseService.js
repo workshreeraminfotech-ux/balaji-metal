@@ -202,14 +202,17 @@ export const firebaseService = {
   addInquiry: async (inquiryData) => {
     if (!firebaseService.isConfigured()) return null;
     try {
-      const docRef = await addDoc(collection(db, 'inquiries'), {
+      const docId = String(inquiryData.id || `inq_${Date.now()}`);
+      const payload = {
         ...inquiryData,
+        id: docId,
         company_name: inquiryData.company_name || inquiryData.company || '',
         product_interest: inquiryData.product_interest || inquiryData.product_name || '',
-        status: 'new',
-        created_at: new Date().toISOString()
-      });
-      return { id: docRef.id, ...inquiryData };
+        status: inquiryData.status || 'new',
+        created_at: inquiryData.created_at || new Date().toISOString()
+      };
+      await setDoc(doc(db, 'inquiries', docId), payload, { merge: true });
+      return payload;
     } catch (err) {
       console.error('Firebase addInquiry error:', err);
       throw err;
@@ -231,6 +234,7 @@ export const firebaseService = {
     if (!firebaseService.isConfigured()) return false;
     try {
       await deleteDoc(doc(db, 'inquiries', String(id)));
+      console.log('✅ Firebase Firestore inquiry deleted:', id);
       return true;
     } catch (err) {
       console.error('Firebase deleteInquiry error:', err);
