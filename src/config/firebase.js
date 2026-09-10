@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB_7oCwWC_7B1lZZD02-Ii332udoKEsaoA",
@@ -32,6 +32,16 @@ if (isFirebaseConfigured()) {
     db = getFirestore(app);
     storage = getStorage(app);
     auth = getAuth(app);
+    
+    // Automatically establish anonymous auth session for multi-browser cloud sync
+    signInAnonymously(auth)
+      .then((userCred) => {
+        console.log('✅ Firebase Anonymous Cloud Sync Session Active:', userCred.user.uid);
+      })
+      .catch((authErr) => {
+        console.warn('ℹ️ Firebase Auth Notice (proceeding with public rules):', authErr.message);
+      });
+
     console.log('✅ Firebase initialized for project:', firebaseConfig.projectId);
   } catch (error) {
     console.error('⚠️ Firebase initialization error:', error);
@@ -41,3 +51,4 @@ if (isFirebaseConfigured()) {
 }
 
 export { app, db, storage, auth };
+

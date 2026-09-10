@@ -200,6 +200,28 @@ function initFirebaseListeners() {
       }
     });
 
+    // Eager initial hydration from Firestore
+    firebaseService.getProducts().then(cloudProds => {
+      if (Array.isArray(cloudProds) && cloudProds.length > 0) {
+        const local = storageService.getProducts();
+        const map = new Map();
+        local.forEach(p => {
+          const k = normalizeProductKey(p);
+          if (k) map.set(k, p);
+        });
+        cloudProds.forEach(cp => {
+          const k = normalizeProductKey(cp);
+          if (k) {
+            const existing = map.get(k);
+            map.set(k, { ...(existing || {}), ...cp, id: cp.id || existing?.id });
+          }
+        });
+        const merged = deduplicateProducts(Array.from(map.values()));
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
+        storageService.notifyChange('products', merged);
+      }
+    }).catch(e => console.warn('Eager product sync notice:', e));
+
     console.log('⚡ Firebase Realtime Cloud Sync Active');
   } catch (err) {
     console.error('Firebase real-time listener error:', err);
