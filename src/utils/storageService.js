@@ -133,54 +133,21 @@ function initFirebaseListeners() {
   isCloudListening = true;
 
   try {
-    // Products Listener
+    // Products Listener: Firestore is the direct single source of truth
     firebaseService.subscribeProducts((cloudProducts) => {
-      if (Array.isArray(cloudProducts) && cloudProducts.length > 0) {
-        const local = storageService.getProducts();
-        
-        // Merge cloud with local, cloud taking priority on same slug/name/ID
-        const map = new Map();
-        local.forEach(p => {
-          const k = normalizeProductKey(p);
-          if (k) map.set(k, p);
-        });
-        
-        cloudProducts.forEach(cp => {
-          const k = normalizeProductKey(cp);
-          if (k) {
-            const existing = map.get(k);
-            map.set(k, { ...(existing || {}), ...cp, id: cp.id || existing?.id });
-          }
-        });
-
-        const merged = deduplicateProducts(Array.from(map.values()));
-        merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
-        storageService.notifyChange('products', merged);
+      if (Array.isArray(cloudProducts)) {
+        const cleaned = deduplicateProducts(cloudProducts);
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cleaned));
+        storageService.notifyChange('products', cleaned);
       }
     });
 
-    // Categories Listener
+    // Categories Listener: Firestore is the direct single source of truth
     firebaseService.subscribeCategories((cloudCategories) => {
-      if (Array.isArray(cloudCategories) && cloudCategories.length > 0) {
-        const local = storageService.getCategories();
-        const map = new Map();
-        local.forEach(c => {
-          const k = normalizeCategoryKey(c);
-          if (k) map.set(k, c);
-        });
-        cloudCategories.forEach(cc => {
-          const k = normalizeCategoryKey(cc);
-          if (k) {
-            const existing = map.get(k);
-            map.set(k, { ...(existing || {}), ...cc, id: cc.id || existing?.id });
-          }
-        });
-        const merged = deduplicateCategories(Array.from(map.values()));
-
-        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(merged));
-        storageService.notifyChange('categories', merged);
+      if (Array.isArray(cloudCategories)) {
+        const cleaned = deduplicateCategories(cloudCategories);
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cleaned));
+        storageService.notifyChange('categories', cleaned);
       }
     });
 
@@ -200,29 +167,31 @@ function initFirebaseListeners() {
       }
     });
 
-    // Eager initial hydration from Firestore
+    // Direct Initial Hydration from Firestore on startup
     firebaseService.getProducts().then(cloudProds => {
       if (Array.isArray(cloudProds) && cloudProds.length > 0) {
-        const local = storageService.getProducts();
-        const map = new Map();
-        local.forEach(p => {
-          const k = normalizeProductKey(p);
-          if (k) map.set(k, p);
-        });
-        cloudProds.forEach(cp => {
-          const k = normalizeProductKey(cp);
-          if (k) {
-            const existing = map.get(k);
-            map.set(k, { ...(existing || {}), ...cp, id: cp.id || existing?.id });
-          }
-        });
-        const merged = deduplicateProducts(Array.from(map.values()));
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
-        storageService.notifyChange('products', merged);
+        const cleaned = deduplicateProducts(cloudProds);
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cleaned));
+        storageService.notifyChange('products', cleaned);
       }
-    }).catch(e => console.warn('Eager product sync notice:', e));
+    }).catch(e => console.warn('Initial product sync notice:', e));
 
-    console.log('⚡ Firebase Realtime Cloud Sync Active');
+    firebaseService.getCategories().then(cloudCats => {
+      if (Array.isArray(cloudCats) && cloudCats.length > 0) {
+        const cleaned = deduplicateCategories(cloudCats);
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cleaned));
+        storageService.notifyChange('categories', cleaned);
+      }
+    }).catch(e => console.warn('Initial categories sync notice:', e));
+
+    firebaseService.getSettings().then(cloudSettings => {
+      if (cloudSettings) {
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(cloudSettings));
+        storageService.notifyChange('settings', cloudSettings);
+      }
+    }).catch(e => console.warn('Initial settings sync notice:', e));
+
+    console.log('⚡ Firebase Realtime Cloud Sync Active (Direct Mode)');
   } catch (err) {
     console.error('Firebase real-time listener error:', err);
   }
@@ -258,20 +227,18 @@ export const storageService = {
       const stored = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           const cleaned = deduplicateProducts(parsed);
-          // If duplicates were pruned, update localStorage immediately (self-healing)
           if (cleaned.length !== parsed.length) {
             localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cleaned));
           }
           return cleaned;
         }
       }
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(PRODUCTS));
-      return PRODUCTS;
+      return [];
     } catch (e) {
       console.error('Storage getProducts error:', e);
-      return PRODUCTS;
+      return [];
     }
   },
 
@@ -288,7 +255,6 @@ export const storageService = {
   saveProduct: async (productData) => {
     const categories = storageService.getCategories();
     const category = categories.find(c => String(c.id) === String(productData.category_id)) || {};
-    
     const products = storageService.getProducts();
     
     // Stable slug and ID generation
@@ -331,7 +297,12 @@ export const storageService = {
       updated_at: new Date().toISOString()
     };
 
-    // 1. Update in-memory & LocalStorage immediately
+    // 1. Direct Firebase Save First
+    if (firebaseService.isConfigured()) {
+      await firebaseService.saveProduct(fullProduct);
+    }
+
+    // 2. Immediate local cache update for snappy UX
     let updatedProducts;
     if (existingIndex >= 0) {
       updatedProducts = [...products];
@@ -344,31 +315,20 @@ export const storageService = {
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedProducts));
     storageService.notifyChange('products', updatedProducts);
 
-    // 2. Sync to Firebase Firestore asynchronously
-    if (firebaseService.isConfigured()) {
-      try {
-        await firebaseService.saveProduct(fullProduct);
-      } catch (err) {
-        console.warn('Firebase saveProduct sync failed:', err);
-      }
-    }
-
     return updatedProducts;
   },
 
   deleteProduct: async (id) => {
+    // 1. Direct Firebase Delete First
+    if (firebaseService.isConfigured()) {
+      await firebaseService.deleteProduct(id);
+    }
+
+    // 2. Immediate local cache update
     const products = storageService.getProducts();
-    const filtered = products.filter(p => String(p.id) !== String(id));
+    const filtered = products.filter(p => String(p.id) !== String(id) && p.slug !== String(id));
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
     storageService.notifyChange('products', filtered);
-
-    if (firebaseService.isConfigured()) {
-      try {
-        await firebaseService.deleteProduct(id);
-      } catch (err) {
-        console.warn('Firebase deleteProduct sync failed:', err);
-      }
-    }
     return filtered;
   },
 
@@ -378,7 +338,7 @@ export const storageService = {
       const stored = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           const cleaned = deduplicateCategories(parsed);
           if (cleaned.length !== parsed.length) {
             localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cleaned));
@@ -386,11 +346,10 @@ export const storageService = {
           return cleaned;
         }
       }
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(CATEGORIES));
-      return CATEGORIES;
+      return [];
     } catch (e) {
       console.error('Storage getCategories error:', e);
-      return CATEGORIES;
+      return [];
     }
   },
 
@@ -407,6 +366,10 @@ export const storageService = {
       updated_at: new Date().toISOString()
     };
 
+    if (firebaseService.isConfigured()) {
+      await firebaseService.saveCategory(fullCat);
+    }
+
     let updated;
     const existingIndex = categories.findIndex(c => String(c.id) === String(targetId) || c.slug === slug);
     if (existingIndex >= 0) {
@@ -418,30 +381,17 @@ export const storageService = {
 
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
     storageService.notifyChange('categories', updated);
-
-    if (firebaseService.isConfigured()) {
-      try {
-        await firebaseService.saveCategory(fullCat);
-      } catch (err) {
-        console.warn('Firebase saveCategory sync failed:', err);
-      }
-    }
     return updated;
   },
 
   deleteCategory: async (id) => {
+    if (firebaseService.isConfigured()) {
+      await firebaseService.deleteCategory(id);
+    }
     const categories = storageService.getCategories();
-    const filtered = categories.filter(c => String(c.id) !== String(id));
+    const filtered = categories.filter(c => String(c.id) !== String(id) && c.slug !== String(id));
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
     storageService.notifyChange('categories', filtered);
-
-    if (firebaseService.isConfigured()) {
-      try {
-        await firebaseService.deleteCategory(id);
-      } catch (err) {
-        console.warn('Firebase deleteCategory sync failed:', err);
-      }
-    }
     return filtered;
   },
 
@@ -572,18 +522,13 @@ export const storageService = {
   },
 
   saveSettings: async (settingsData) => {
+    if (firebaseService.isConfigured()) {
+      await firebaseService.saveSettings(settingsData);
+    }
     const current = storageService.getSettings();
     const updated = { ...current, ...settingsData };
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
     storageService.notifyChange('settings', updated);
-
-    if (firebaseService.isConfigured()) {
-      try {
-        await firebaseService.saveSettings(settingsData);
-      } catch (err) {
-        console.warn('Firebase saveSettings sync failed:', err);
-      }
-    }
     return updated;
   },
 

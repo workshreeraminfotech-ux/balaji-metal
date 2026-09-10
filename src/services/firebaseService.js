@@ -28,13 +28,6 @@ export const firebaseService = {
     if (!firebaseService.isConfigured()) return null;
     try {
       const snapshot = await getDocs(collection(db, 'products'));
-      if (snapshot.empty) {
-        await firebaseService.seedInitialData();
-        const seededSnapshot = await getDocs(collection(db, 'products'));
-        const list = seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        list.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-        return list;
-      }
       const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       list.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       return list;
@@ -74,8 +67,8 @@ export const firebaseService = {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-      // Deterministic document ID to prevent duplicate document creation
-      const docId = String(productData.slug || productData.id || slug);
+      // Stable Firestore Document ID
+      const docId = String(productData.id || productData.slug || slug || `prod_${Date.now()}`);
 
       const payload = {
         ...productData,
@@ -121,11 +114,6 @@ export const firebaseService = {
     if (!firebaseService.isConfigured()) return null;
     try {
       const snapshot = await getDocs(collection(db, 'categories'));
-      if (snapshot.empty) {
-        await firebaseService.seedCategories();
-        const seeded = await getDocs(collection(db, 'categories'));
-        return seeded.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      }
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (err) {
       console.error('Firebase getCategories error:', err);
