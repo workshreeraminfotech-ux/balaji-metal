@@ -8,11 +8,11 @@ import { firebaseService } from '@/services/firebaseService';
 import { compressImage } from '@/utils/imageCompressor';
 
 export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
-  const categories = storageService.getCategories();
+  const [categories, setCategories] = useState(() => storageService.getCategories());
 
   const [formData, setFormData] = useState({
     name: '',
-    category_id: categories[0]?.id || 1,
+    category_id: '',
     short_description: '',
     is_featured: true,
     photos: [], // Max 5 photo URLs
@@ -24,6 +24,9 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const currentCats = storageService.getCategories();
+    setCategories(currentCats);
+
     if (product) {
       let existingPhotos = [];
       if (Array.isArray(product.gallery) && product.gallery.length > 0) {
@@ -32,9 +35,11 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
         existingPhotos = [product.image];
       }
 
+      const matchingCat = currentCats.find(c => String(c.id) === String(product.category_id) || c.slug === product.category_slug || c.name === product.category_name);
+
       setFormData({
         name: product.name || '',
-        category_id: product.category_id || (categories.find(c => c.slug === product.category_slug)?.id) || categories[0]?.id || 1,
+        category_id: matchingCat?.id || product.category_id || currentCats[0]?.id || 1,
         short_description: product.short_description || product.description || '',
         is_featured: product.is_featured !== undefined ? product.is_featured : true,
         photos: existingPhotos.slice(0, 5),
@@ -43,7 +48,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
     } else {
       setFormData({
         name: '',
-        category_id: categories[0]?.id || 1,
+        category_id: currentCats[0]?.id || 1,
         short_description: '',
         is_featured: true,
         photos: [],
@@ -234,9 +239,13 @@ export default function ProductFormModal({ isOpen, onClose, product, onSave }) {
                 onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-3 text-slate-800 text-sm focus:border-orange-500 focus:outline-none cursor-pointer"
               >
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+                {categories.length === 0 ? (
+                  <option value="1">General Category</option>
+                ) : (
+                  categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))
+                )}
               </select>
             </div>
           </div>

@@ -30,17 +30,14 @@ export default function AdminCategoriesPage() {
 
   const handleOpenAdd = () => {
     setEditingCategory(null);
-    setFormData({ name: '', slug: '', shortName: '', description: '' });
+    setFormData({ name: '' });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (cat) => {
     setEditingCategory(cat);
     setFormData({
-      name: cat.name || '',
-      slug: cat.slug || '',
-      shortName: cat.shortName || cat.name || '',
-      description: cat.description || ''
+      name: cat.name || ''
     });
     setIsModalOpen(true);
   };
@@ -49,14 +46,15 @@ export default function AdminCategoriesPage() {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
-    const slug = formData.slug.trim() || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const name = formData.name.trim();
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     
     await storageService.saveCategory({
       ...(editingCategory ? { id: editingCategory.id } : {}),
-      name: formData.name.trim(),
-      slug,
-      shortName: formData.shortName.trim() || formData.name.trim(),
-      description: formData.description.trim()
+      name: name,
+      slug: slug,
+      shortName: name,
+      description: ''
     });
 
     setIsModalOpen(false);
@@ -64,7 +62,7 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
+    if (window.confirm('Are you sure you want to delete this category? It will be removed permanently from Firebase.')) {
       await storageService.deleteCategory(id);
       loadData();
     }
@@ -82,7 +80,7 @@ export default function AdminCategoriesPage() {
             <span>Category Management</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
-            Organize couplings, pulleys, hand wheels, and transmission accessories.
+            Manage product categories for organizing your catalog.
           </p>
         </div>
 
@@ -118,14 +116,7 @@ export default function AdminCategoriesPage() {
                   <h3 className="text-lg font-heading font-black text-slate-900">
                     {cat.name}
                   </h3>
-                  <span className="text-[11px] font-mono text-slate-400">
-                    slug: {cat.slug}
-                  </span>
                 </div>
-
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {cat.description || 'Power transmission products line.'}
-                </p>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
@@ -151,7 +142,7 @@ export default function AdminCategoriesPage() {
         })}
       </div>
 
-      {/* Modal */}
+      {/* Modal - Only Category Name */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="relative bg-white border border-slate-200 rounded-3xl shadow-2xl w-full max-w-md p-6 text-slate-900 space-y-4">
@@ -169,37 +160,16 @@ export default function AdminCategoriesPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 uppercase">Category Name *</label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Industrial Couplings"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-500 focus:bg-white text-xs"
+                  onChange={(e) => setFormData({ name: e.target.value })}
+                  placeholder="e.g. Couplings, Pulleys, Hand Wheels"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-orange-500 focus:bg-white text-sm"
+                  autoFocus
                   required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 uppercase">Short Name</label>
-                <input
-                  type="text"
-                  value={formData.shortName}
-                  onChange={(e) => setFormData({ ...formData, shortName: e.target.value })}
-                  placeholder="e.g. Couplings"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-500 focus:bg-white text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 uppercase">Description</label>
-                <textarea
-                  rows={2}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Brief description..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-orange-500 focus:bg-white text-xs"
                 />
               </div>
 
@@ -207,13 +177,13 @@ export default function AdminCategoriesPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-600/20 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-600/20 cursor-pointer"
                 >
                   Save Category
                 </button>
