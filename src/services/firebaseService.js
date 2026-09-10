@@ -47,7 +47,18 @@ export const firebaseService = {
   subscribeProducts: (callback) => {
     if (!firebaseService.isConfigured()) return () => {};
     return onSnapshot(collection(db, 'products'), (snapshot) => {
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const map = new Map();
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const item = { id: doc.id, ...data };
+        const slug = (item.slug || '').trim().toLowerCase();
+        const name = (item.name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const key = slug ? `slug:${slug}` : (name ? `name:${name}` : `id:${doc.id}`);
+        if (!map.has(key) || (item.updated_at || '') > (map.get(key).updated_at || '')) {
+          map.set(key, item);
+        }
+      });
+      const items = Array.from(map.values());
       items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       callback(items);
     }, (error) => {
@@ -58,12 +69,13 @@ export const firebaseService = {
   saveProduct: async (productData) => {
     if (!firebaseService.isConfigured()) return null;
     try {
-      const docId = String(productData.id || productData.slug || doc(collection(db, 'products')).id);
-      
       const slug = productData.slug || (productData.name || 'product')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
+
+      // Deterministic document ID to prevent duplicate document creation
+      const docId = String(productData.slug || productData.id || slug);
 
       const payload = {
         ...productData,

@@ -131,12 +131,44 @@ export default function ProductDetailPage() {
   const torqueSpec = specifications.find(s => s.key.toLowerCase().includes('torque') || s.key.toLowerCase().includes('rating'))?.value || 'Up to 15,000 Nm';
   const speedSpec = specifications.find(s => s.key.toLowerCase().includes('speed') || s.key.toLowerCase().includes('rpm'))?.value || '1,500 – 4,000 RPM';
 
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "image": imageSrc.startsWith('http') ? imageSrc : `https://balajimetal.co${imageSrc}`,
+    "description": product.short_description || product.description || `${product.name} manufactured by Balaji Metal in Rajkot, Gujarat.`,
+    "brand": {
+      "@type": "Brand",
+      "name": "Balaji Metal"
+    },
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "Balaji Metal",
+      "url": "https://balajimetal.co"
+    },
+    "category": product.category_name || "Industrial Power Transmission",
+    "offers": {
+      "@type": "AggregateOffer",
+      "priceCurrency": "INR",
+      "price": "Contact for Quote",
+      "priceValidUntil": "2030-12-31",
+      "availability": "https://schema.org/InStock",
+      "itemCondition": "https://schema.org/NewCondition",
+      "seller": {
+        "@type": "Organization",
+        "name": "Balaji Metal"
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pt-24 pb-24">
       <SEO 
         title={`${product.name} | Precision Industrial Transmission | Balaji Metal`} 
         description={product.short_description || `Technical specifications, ISO 1940 dynamic balancing, and sizing details for ${product.name} manufactured by Balaji Metal Rajkot.`} 
-        keywords={`${product.name}, pin bush coupling, star bush coupling, rajkot power transmission, industrial coupling specs`}
+        keywords={`${product.name}, pin bush coupling, star bush coupling, rajkot power transmission, industrial coupling specs, Balaji Metal`}
+        image={imageSrc}
+        schema={productSchema}
       />
       
       {/* ─────────────────────────────────────────────────────────

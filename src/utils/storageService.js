@@ -40,14 +40,87 @@ const SAMPLE_INQUIRIES = [
   }
 ];
 
-// Helper to deduplicate product list by ID and slug
+// Helper to extract a normalized unique key for product deduplication
+function normalizeProductKey(item) {
+  if (!item) return '';
+  const slug = (item.slug || '').trim().toLowerCase();
+  if (slug) return `slug:${slug}`;
+  
+  const name = (item.name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (name) return `name:${name}`;
+
+  const id = String(item.id || '').trim();
+  if (id) return `id:${id}`;
+
+  return '';
+}
+
+// Helper to deduplicate product list by slug, normalized name, and ID
 function deduplicateProducts(list) {
+  if (!Array.isArray(list)) return [];
+  const map = new Map();
+  
+  for (const item of list) {
+    if (!item) continue;
+    const key = normalizeProductKey(item);
+    if (!key) continue;
+
+    if (map.has(key)) {
+      const existing = map.get(key);
+      const isItemNewer = (item.updated_at || item.created_at || '') > (existing.updated_at || existing.created_at || '');
+      const primary = isItemNewer ? item : existing;
+      const secondary = isItemNewer ? existing : item;
+
+      // Smart merge preserving photos, features, specs and applications
+      const gallery = (primary.gallery && primary.gallery.length > 0) 
+        ? primary.gallery 
+        : (secondary.gallery && secondary.gallery.length > 0 ? secondary.gallery : [primary.image || secondary.image].filter(Boolean));
+      
+      const features = (primary.features && primary.features.length > 0)
+        ? primary.features
+        : (secondary.features || []);
+
+      map.set(key, {
+        ...secondary,
+        ...primary,
+        id: primary.id || secondary.id,
+        slug: primary.slug || secondary.slug,
+        name: primary.name || secondary.name,
+        gallery,
+        features,
+        specifications: primary.specifications || secondary.specifications || [],
+        applications: primary.applications || secondary.applications || [],
+        available_sizes: primary.available_sizes || secondary.available_sizes || []
+      });
+    } else {
+      map.set(key, item);
+    }
+  }
+  return Array.from(map.values());
+}
+
+// Helper to deduplicate categories
+function normalizeCategoryKey(item) {
+  if (!item) return '';
+  const slug = (item.slug || '').trim().toLowerCase();
+  if (slug) return `slug:${slug}`;
+  const name = (item.name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (name) return `name:${name}`;
+  return `id:${item.id}`;
+}
+
+function deduplicateCategories(list) {
   if (!Array.isArray(list)) return [];
   const map = new Map();
   for (const item of list) {
     if (!item) continue;
-    const key = String(item.id || item.slug || item.name);
-    map.set(key, { ...(map.get(key) || {}), ...item });
+    const key = normalizeCategoryKey(item);
+    if (!key) continue;
+    if (map.has(key)) {
+      map.set(key, { ...map.get(key), ...item });
+    } else {
+      map.set(key, item);
+    }
   }
   return Array.from(map.values());
 }
@@ -65,12 +138,22 @@ function initFirebaseListeners() {
       if (Array.isArray(cloudProducts) && cloudProducts.length > 0) {
         const local = storageService.getProducts();
         
-        // Merge cloud with local, cloud taking priority on same IDs
+        // Merge cloud with local, cloud taking priority on same slug/name/ID
         const map = new Map();
-        local.forEach(p => map.set(String(p.id || p.slug), p));
-        cloudProducts.forEach(cp => map.set(String(cp.id || cp.slug), cp));
+        local.forEach(p => {
+          const k = normalizeProductKey(p);
+          if (k) map.set(k, p);
+        });
+        
+        cloudProducts.forEach(cp => {
+          const k = normalizeProductKey(cp);
+          if (k) {
+            const existing = map.get(k);
+            map.set(k, { ...(existing || {}), ...cp, id: cp.id || existing?.id });
+          }
+        });
 
-        const merged = Array.from(map.values());
+        const merged = deduplicateProducts(Array.from(map.values()));
         merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
         localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
@@ -83,9 +166,18 @@ function initFirebaseListeners() {
       if (Array.isArray(cloudCategories) && cloudCategories.length > 0) {
         const local = storageService.getCategories();
         const map = new Map();
-        local.forEach(c => map.set(String(c.id || c.slug), c));
-        cloudCategories.forEach(cc => map.set(String(cc.id || cc.slug), cc));
-        const merged = Array.from(map.values());
+        local.forEach(c => {
+          const k = normalizeCategoryKey(c);
+          if (k) map.set(k, c);
+        });
+        cloudCategories.forEach(cc => {
+          const k = normalizeCategoryKey(cc);
+          if (k) {
+            const existing = map.get(k);
+            map.set(k, { ...(existing || {}), ...cc, id: cc.id || existing?.id });
+          }
+        });
+        const merged = deduplicateCategories(Array.from(map.values()));
 
         localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(merged));
         storageService.notifyChange('categories', merged);
@@ -145,7 +237,12 @@ export const storageService = {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return deduplicateProducts(parsed);
+          const cleaned = deduplicateProducts(parsed);
+          // If duplicates were pruned, update localStorage immediately (self-healing)
+          if (cleaned.length !== parsed.length) {
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cleaned));
+          }
+          return cleaned;
         }
       }
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(PRODUCTS));
@@ -172,43 +269,51 @@ export const storageService = {
     
     const products = storageService.getProducts();
     
-    // Stable ID generation
+    // Stable slug and ID generation
     const slug = productData.slug || (productData.name || 'product')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    const targetId = productData.id ? String(productData.id) : `prod_${Date.now()}`;
+    const targetKey = normalizeProductKey({ ...productData, slug });
+    const existingIndex = products.findIndex(p => 
+      (productData.id && String(p.id) === String(productData.id)) ||
+      p.slug === slug ||
+      normalizeProductKey(p) === targetKey
+    );
+
+    const existingProduct = existingIndex >= 0 ? products[existingIndex] : null;
+    const targetId = existingProduct?.id || productData.id || `prod_${Date.now()}`;
     const defaultImg = '/images/products/pin-bush-coupling/pin-bush-coupling-01.jpeg';
-    const mainImg = productData.image || (productData.photos && productData.photos[0]) || defaultImg;
+    const mainImg = productData.image || (productData.photos && productData.photos[0]) || existingProduct?.image || defaultImg;
     const gallery = (productData.photos && productData.photos.length > 0) 
       ? productData.photos 
-      : (productData.gallery && productData.gallery.length > 0 ? productData.gallery : [mainImg]);
+      : (productData.gallery && productData.gallery.length > 0 ? productData.gallery : (existingProduct?.gallery || [mainImg]));
 
     const fullProduct = {
+      ...(existingProduct || {}),
       ...productData,
       id: targetId,
       slug,
-      category_id: Number(productData.category_id || 1),
-      category_name: category.name || productData.category_name || 'Industrial Components',
-      category_slug: category.slug || productData.category_slug || 'couplings',
+      category_id: Number(productData.category_id || existingProduct?.category_id || 1),
+      category_name: category.name || productData.category_name || existingProduct?.category_name || 'Industrial Components',
+      category_slug: category.slug || productData.category_slug || existingProduct?.category_slug || 'couplings',
       image: mainImg,
       gallery,
-      features: Array.isArray(productData.features) ? productData.features.filter(Boolean) : [],
-      short_description: productData.short_description || '',
-      description: productData.description || productData.short_description || '',
-      is_featured: productData.is_featured !== false,
+      features: Array.isArray(productData.features) ? productData.features.filter(Boolean) : (existingProduct?.features || []),
+      short_description: productData.short_description || existingProduct?.short_description || '',
+      description: productData.description || productData.short_description || existingProduct?.description || '',
+      is_featured: productData.is_featured !== undefined ? productData.is_featured : (existingProduct?.is_featured ?? true),
       is_published: true,
-      created_at: productData.created_at || new Date().toISOString(),
+      created_at: existingProduct?.created_at || productData.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
     // 1. Update in-memory & LocalStorage immediately
     let updatedProducts;
-    const existingIndex = products.findIndex(p => String(p.id) === String(targetId) || p.slug === slug);
     if (existingIndex >= 0) {
       updatedProducts = [...products];
-      updatedProducts[existingIndex] = { ...products[existingIndex], ...fullProduct };
+      updatedProducts[existingIndex] = fullProduct;
     } else {
       updatedProducts = [fullProduct, ...products];
     }
@@ -252,7 +357,11 @@ export const storageService = {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const cleaned = deduplicateCategories(parsed);
+          if (cleaned.length !== parsed.length) {
+            localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cleaned));
+          }
+          return cleaned;
         }
       }
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(CATEGORIES));
@@ -526,6 +635,30 @@ export const storageService = {
     localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
     storageService.notifyChange('auth');
+  },
+
+  // Clean any duplicate products and categories immediately
+  cleanDuplicates: () => {
+    try {
+      const storedProds = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+      if (storedProds) {
+        const parsed = JSON.parse(storedProds);
+        const cleaned = deduplicateProducts(parsed);
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cleaned));
+        storageService.notifyChange('products', cleaned);
+      }
+      const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (storedCats) {
+        const parsed = JSON.parse(storedCats);
+        const cleaned = deduplicateCategories(parsed);
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cleaned));
+        storageService.notifyChange('categories', cleaned);
+      }
+      return true;
+    } catch (e) {
+      console.error('cleanDuplicates error:', e);
+      return false;
+    }
   },
 
   // Reset to initial factory defaults

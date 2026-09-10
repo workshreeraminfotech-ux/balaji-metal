@@ -19,6 +19,7 @@ export default function AdminProductsPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [cleanMessage, setCleanMessage] = useState('');
 
   const loadData = () => {
     setProducts(storageService.getProducts());
@@ -26,6 +27,8 @@ export default function AdminProductsPage() {
   };
 
   useEffect(() => {
+    // Auto-clean any duplicates on load
+    storageService.cleanDuplicates();
     loadData();
     const unsubscribe = storageService.subscribe((detail) => {
       if (!detail?.type || detail.type === 'products' || detail.type === 'categories' || detail.type === 'all') {
@@ -34,6 +37,13 @@ export default function AdminProductsPage() {
     });
     return unsubscribe;
   }, []);
+
+  const handleCleanDuplicates = () => {
+    storageService.cleanDuplicates();
+    loadData();
+    setCleanMessage('Duplicates removed & catalog cleaned successfully!');
+    setTimeout(() => setCleanMessage(''), 4000);
+  };
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
@@ -86,15 +96,44 @@ export default function AdminProductsPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenAdd}
-          className="px-5 py-3 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs shadow-md shadow-orange-600/25 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105"
-        >
-          <Plus size={16} />
-          <span>Add New Product</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleCleanDuplicates}
+            className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all border border-slate-200"
+            title="Clean any duplicate entries"
+          >
+            <RotateCcw size={15} className="text-slate-500" />
+            <span>Remove Duplicates</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenAdd}
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs shadow-md shadow-orange-600/25 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105"
+          >
+            <Plus size={16} />
+            <span>Add New Product</span>
+          </button>
+        </div>
       </div>
+
+      {/* Toast Alert for Duplicate Cleanup */}
+      {cleanMessage && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-2xl px-5 py-3 flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-emerald-600" />
+            <span>{cleanMessage}</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setCleanMessage('')} 
+            className="text-emerald-600 hover:text-emerald-900 cursor-pointer font-bold ml-4"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Toolbar: Search & Category Filter */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 items-center justify-between shadow-xs">

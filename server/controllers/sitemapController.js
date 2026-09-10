@@ -2,7 +2,7 @@ const { pool } = require('../config/database');
 
 exports.generateSitemap = async (req, res, next) => {
   try {
-    const baseUrl = process.env.SITE_URL || 'https://balajimental.com';
+    const baseUrl = process.env.SITE_URL || 'https://balajimetal.co';
 
     // Static pages
     const staticPages = [

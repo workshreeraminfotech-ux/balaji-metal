@@ -61,11 +61,32 @@ export default function ContactPage() {
     });
   };
 
+  const contactSchema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "mainEntity": {
+      "@type": "LocalBusiness",
+      "name": "Balaji Metal",
+      "telephone": ["+917096070727", "+919265539537"],
+      "email": "Balajimetal5302@gmail.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "P. 43/44, Main Road, Ta. Kotda Sangani, Veraval (Shapar - Padavala Industrial Zone)",
+        "addressLocality": "Rajkot",
+        "addressRegion": "Gujarat",
+        "postalCode": "360025",
+        "addressCountry": "IN"
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
       <SEO 
-        title="Contact Us | Balaji Metal - Direct Quotations & Factory Support" 
-        description="Contact Balaji Metal for heavy-duty couplings, pulleys, and custom castings quotations. Phone: +91-76000 60193 | Veraval, Rajkot, Gujarat." 
+        title="Contact Us | Balaji Metal - Direct Quotations & Factory Support Rajkot" 
+        description="Contact Balaji Metal for heavy-duty Pin Bush Couplings, Star Couplings, Pulleys & custom casting quotations. Phone: +91 70960 70727 | Shapar-Veraval Industrial Zone, Rajkot, Gujarat." 
+        keywords="Contact Balaji Metal, Balaji Metal phone number, Balaji Metal Rajkot address, coupling manufacturer contact, industrial pulley price inquiry"
+        schema={contactSchema}
       />
       
       {/* Dynamic Hero Banner with Industrial Background Image */}
